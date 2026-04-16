@@ -199,7 +199,14 @@ async function checkRequirements() {
         return;
     }
 
-    const params = await LanguageModel.params();
+    const params = typeof LanguageModel.params === 'function'
+        ? await LanguageModel.params()
+        : {
+            defaultTemperature: 1,
+            defaultTopK: 3,
+            maxTemperature: 2,
+            maxTopK: 128,
+        };
     console.log('Language Model Params:', params);
     /*
     defaultTemperature: 1
