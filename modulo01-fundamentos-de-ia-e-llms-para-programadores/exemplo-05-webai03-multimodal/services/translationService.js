@@ -2,20 +2,48 @@ export class TranslationService {
     constructor() {
         this.translator = null;
         this.languageDetector = null;
+        this.availability = 'unavailable';
+        this.isActivating = false;
+    }
+
+    isTranslatorReadyStatus(status) {
+        return status === 'available' || status === 'readily';
+    }
+
+    async refreshAvailability() {
+        if (!('Translator' in self)) {
+            this.availability = 'unavailable';
+            return this.availability;
+        }
+
+        this.availability = await Translator.availability({
+            sourceLanguage: 'en',
+            targetLanguage: 'pt'
+        });
+
+        return this.availability;
+    }
+
+    getState() {
+        const isReady = !!this.translator;
+
+        return {
+            availability: isReady ? 'available' : this.availability,
+            isReady,
+            isActivating: this.isActivating,
+            requiresUserActivation: !isReady && (this.availability === 'downloadable' || this.availability === 'downloading'),
+        };
     }
 
     async initialize() {
         try {
             // Check Translator availability
             if ('Translator' in self) {
-                const availability = await Translator.availability({
-                    sourceLanguage: 'en',
-                    targetLanguage: 'pt'
-                });
+                const availability = await this.refreshAvailability();
                 console.log('Translator Availability:', availability);
 
                 // Only create translator if available (not downloadable/downloading)
-                if (availability === 'readily') {
+                if (this.isTranslatorReadyStatus(availability)) {
                     this.translator = await Translator.create({
                         sourceLanguage: 'en',
                         targetLanguage: 'pt'
@@ -43,16 +71,62 @@ export class TranslationService {
         }
     }
 
+    async activateTranslator(onProgress) {
+        if (!('Translator' in self)) {
+            throw new Error('⚠️ A API de Tradução não está ativa no navegador.');
+        }
+
+        if (this.translator) {
+            return this.translator;
+        }
+
+        this.isActivating = true;
+
+        try {
+            const availability = await this.refreshAvailability();
+
+            if (![ 'available', 'readily', 'downloadable', 'downloading' ].includes(availability)) {
+                throw new Error('⚠️ O modelo de tradução não está disponível neste navegador.');
+            }
+
+            this.translator = await Translator.create({
+                sourceLanguage: 'en',
+                targetLanguage: 'pt',
+                monitor(m) {
+                    m.addEventListener('downloadprogress', (e) => {
+                        const percent = ((e.loaded / e.total) * 100).toFixed(0);
+                        console.log(`Translator downloaded ${percent}%`);
+
+                        if (typeof onProgress === 'function') {
+                            onProgress(percent);
+                        }
+                    });
+                }
+            });
+
+            this.availability = 'available';
+            console.log('Translator initialized by user gesture');
+            return this.translator;
+        } catch (error) {
+            await this.refreshAvailability();
+
+            if (error?.name === 'NotAllowedError') {
+                throw new Error('⚠️ O navegador exigiu um clique direto do usuário para ativar a tradução. Tente clicar novamente no botão.');
+            }
+
+            throw new Error(`⚠️ Não foi possível ativar a tradução: ${error.message}`);
+        } finally {
+            this.isActivating = false;
+        }
+    }
+
     async translateToPortuguese(text) {
         // If translator not available, try to initialize it now (late-binding with user gesture context)
         if (!this.translator && 'Translator' in self) {
             try {
-                const availability = await Translator.availability({
-                    sourceLanguage: 'en',
-                    targetLanguage: 'pt'
-                });
+                const availability = await this.refreshAvailability();
                 
-                if (availability === 'readily') {
+                if (this.isTranslatorReadyStatus(availability)) {
                     console.log('Translator is now ready, initializing...');
                     this.translator = await Translator.create({
                         sourceLanguage: 'en',
@@ -60,25 +134,10 @@ export class TranslationService {
                     });
                     console.log('Translator initialized on-demand');
                 } else if (availability === 'downloadable') {
-                    console.log('Translator model available, attempting to initialize with download...');
-                    try {
-                        this.translator = await Translator.create({
-                            sourceLanguage: 'en',
-                            targetLanguage: 'pt',
-                            monitor(m) {
-                                m.addEventListener('downloadprogress', (e) => {
-                                    const percent = ((e.loaded / e.total) * 100).toFixed(0);
-                                    console.log(`Translator downloaded ${percent}%`);
-                                });
-                            }
-                        });
-                        console.log('Translator initialized and downloaded');
-                    } catch (downloadError) {
-                        console.log('Translator download initiated but will complete in background. Skipping translation for now.');
-                        return text;
-                    }
+                    console.log('Translator requires user gesture for download. Use the activation button before translating.');
+                    return text;
                 } else if (availability === 'downloading') {
-                    console.log('Translator still downloading, skipping translation');
+                    console.log('Translator still downloading. Finish activation from the button and try again.');
                     return text;
                 } else {
                     console.warn('Translator not available:', availability);

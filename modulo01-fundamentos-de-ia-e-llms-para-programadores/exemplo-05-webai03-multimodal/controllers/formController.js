@@ -25,6 +25,10 @@ export class FormController {
             this.view.triggerFileInput();
         });
 
+        this.view.onTranslationButtonClick(async () => {
+            await this.handleTranslationActivation();
+        });
+
         // Form submit handler
         this.view.onFormSubmit(async (event) => {
             event.preventDefault();
@@ -36,6 +40,8 @@ export class FormController {
 
             await this.handleSubmit();
         });
+
+        this.syncTranslationControls();
     }
 
     async handleSubmit() {
@@ -82,6 +88,7 @@ export class FormController {
                 this.view.setOutput('Traduzindo resposta...');
                 const translatedResponse = await this.translationService.translateToPortuguese(fullResponse);
                 this.view.setOutput(translatedResponse);
+                this.syncTranslationControls();
             }
         } catch (error) {
             console.error('Error during AI generation:', error);
@@ -103,6 +110,55 @@ export class FormController {
             this.view.setButtonToStopMode();
         } else {
             this.view.setButtonToSendMode();
+        }
+    }
+
+    syncTranslationControls() {
+        const translationState = this.translationService.getState();
+
+        if (translationState.isReady) {
+            this.view.setTranslationControlsVisible(true);
+            this.view.setTranslationButtonState({
+                disabled: true,
+                text: 'Tradução ativada',
+            });
+            this.view.setTranslationStatus('O tradutor está pronto para uso.', 'success');
+            return;
+        }
+
+        if (translationState.requiresUserActivation) {
+            this.view.setTranslationControlsVisible(true);
+            this.view.setTranslationButtonState({
+                disabled: translationState.isActivating,
+                text: translationState.isActivating ? 'Ativando Tradução...' : 'Baixar e Ativar Tradução',
+            });
+
+            const message = translationState.availability === 'downloading'
+                ? 'O modelo de tradução está em download. Clique para concluir e ativar quando permitido.'
+                : 'A tradução precisa de um clique seu para iniciar o download e ativar o recurso.';
+
+            this.view.setTranslationStatus(message);
+            return;
+        }
+
+        this.view.setTranslationControlsVisible(false);
+        this.view.setTranslationStatus('');
+    }
+
+    async handleTranslationActivation() {
+        this.syncTranslationControls();
+        this.view.setTranslationStatus('Iniciando download do tradutor...', '');
+
+        try {
+            await this.translationService.activateTranslator((percent) => {
+                this.view.setTranslationStatus(`Baixando modelo de tradução... ${percent}%`);
+            });
+            this.syncTranslationControls();
+            this.view.setTranslationStatus('Tradução ativada com sucesso.', 'success');
+        } catch (error) {
+            console.error('Error activating translation:', error);
+            this.syncTranslationControls();
+            this.view.setTranslationStatus(error.message, 'error');
         }
     }
 }

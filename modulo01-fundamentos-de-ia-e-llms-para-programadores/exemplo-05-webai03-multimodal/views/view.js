@@ -14,6 +14,9 @@ export class View {
             filePreview: document.getElementById('file-preview'),
             fileUploadBtn: document.getElementById('file-upload-btn'),
             fileSelectedName: document.getElementById('file-selected-name'),
+            translationControls: document.getElementById('translation-controls'),
+            translationActivateButton: document.getElementById('translation-activate-button'),
+            translationStatus: document.getElementById('translation-status'),
         };
     }
 
@@ -145,5 +148,39 @@ export class View {
 
     onFormSubmit(callback) {
         this.elements.form.addEventListener('submit', callback);
+    }
+
+    onTranslationButtonClick(callback) {
+        this.elements.translationActivateButton?.addEventListener('click', callback);
+    }
+
+    setTranslationControlsVisible(isVisible) {
+        if (!this.elements.translationControls) {
+            return;
+        }
+
+        this.elements.translationControls.hidden = !isVisible;
+    }
+
+    setTranslationButtonState({ disabled = false, text = 'Baixar e Ativar Tradução' }) {
+        if (!this.elements.translationActivateButton) {
+            return;
+        }
+
+        this.elements.translationActivateButton.disabled = disabled;
+        this.elements.translationActivateButton.textContent = text;
+    }
+
+    setTranslationStatus(message = '', tone = '') {
+        if (!this.elements.translationStatus) {
+            return;
+        }
+
+        this.elements.translationStatus.textContent = message;
+        this.elements.translationStatus.className = 'translation-status';
+
+        if (tone) {
+            this.elements.translationStatus.classList.add(tone);
+        }
     }
 }
