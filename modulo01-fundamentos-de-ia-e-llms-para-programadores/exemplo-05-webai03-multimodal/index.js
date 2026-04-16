@@ -19,13 +19,15 @@ import { FormController } from './controllers/formController.js';
         return;
     }
 
-    // Initialize translation services
+    // Initialize translation services (non-fatal if it fails)
     try {
-        await translationService.initialize();
+        const translationInitialized = await translationService.initialize();
+        if (!translationInitialized) {
+            console.warn('Translation services unavailable, app will work with AI only');
+        }
     } catch (error) {
         console.error('Error initializing translation:', error);
-        view.showError([error.message]);
-        return;
+        console.warn('Translation services unavailable, app will work with AI only');
     }
 
     // Get and initialize AI parameters
