@@ -1,48 +1,261 @@
-<output id="output"></output>
-<!-- https://www.jsdelivr.com/package/npm/markdown -->
-<script src="https://cdn.jsdelivr.net/npm/markdown@0.5.0/lib/markdown.min.js"></script>
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebAI 01</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
 
-<script>
-    const output = document.getElementById('output');
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at top, #f4f7ff, #e9f7f1 45%, #fef6e4);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
 
-    ; (async () => {
-        const params = await LanguageModel.params()
-        console.log("Language Model Params:", params);
+      main {
+        width: min(760px, 92vw);
+        background: #ffffffcc;
+        border: 1px solid #d9e3f0;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 20px 45px rgba(27, 39, 51, 0.12);
+      }
 
-        const temperature = params.defaultTemperature
-        const topK = params.defaultTopK
+      h1 {
+        margin-top: 0;
+      }
 
-        const initialPrompts = [
-            {
-                role: 'system',
-                content: `Você é um assistente de IA que responde de forma clara e objetiva.`
-            }
-        ]
+      #startBtn {
+        border: 0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        background: #0e7490;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
 
-        const question = 'Quem inventou o JavaScript?'
-        output.innerHTML = "Gerando resposta...";
+      #startBtn[disabled] {
+        opacity: 0.65;
+        cursor: wait;
+      }
 
-        const session = await LanguageModel.create({
-            expectedInputLanguages: ["pt"],
-            temperature,
-            topK,
-            initialPrompts,
-        })
+      #output {
+        margin-top: 16px;
+        line-height: 1.6;
+      }
 
-        const responseStream = await session.promptStreaming([
-            {
-                role: 'user',
-                content: question
-            }
-        ])
-        output.innerHTML = ""
-        let fullText = ""
-        for await (const token of responseStream) {
-            fullText += token;
-            output.innerHTML = markdown.toHTML(fullText);
+      #diagnostics {
+        margin-top: 18px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 12px;
+      }
 
-            // console.log(token)
+      #diagnostics h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+
+      #diagOutput {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.45;
+        font-size: 13px;
+      }
+
+      #diagBtn {
+        margin-top: 8px;
+        border: 1px solid #0f766e;
+        border-radius: 8px;
+        padding: 8px 12px;
+        background: #ecfeff;
+        color: #115e59;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .muted {
+        color: #475569;
+      }
+
+      .error {
+        color: #9f1239;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>WebAI no Chrome</h1>
+      <p class="muted">Clique no botao para iniciar a geracao com a API experimental de IA do Chrome.</p>
+      <button id="startBtn" type="button">Iniciar</button>
+      <section id="output" aria-live="polite">Aguardando clique...</section>
+      <section id="diagnostics" aria-live="polite">
+        <h2>Diagnostico</h2>
+        <pre id="diagOutput">Aguardando verificacao...</pre>
+        <button id="diagBtn" type="button">Atualizar diagnostico</button>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/markdown@0.5.0/lib/markdown.min.js"></script>
+    <script>
+      const output = document.getElementById("output");
+      const startBtn = document.getElementById("startBtn");
+      const diagOutput = document.getElementById("diagOutput");
+      const diagBtn = document.getElementById("diagBtn");
+
+      function setMessage(message, className = "") {
+        output.className = className;
+        output.innerHTML = message;
+      }
+
+      function hasLanguageModelApi() {
+        return typeof LanguageModel !== "undefined";
+      }
+
+      async function runDiagnostics() {
+        if (!hasLanguageModelApi()) {
+          diagOutput.textContent = [
+            "LanguageModel presente: nao",
+            "Sugestao: use o mesmo perfil do Chrome onde availability() retornou available.",
+          ].join("\n");
+          return;
         }
-    })();
 
-</script>
+        const staticMethods = Object.getOwnPropertyNames(LanguageModel).sort();
+        const prototypeMethods = Object.getOwnPropertyNames(LanguageModel.prototype || {}).sort();
+
+        let availabilityNoArgs = "erro";
+        let availabilityWithLang = "erro";
+
+        try {
+          availabilityNoArgs = await LanguageModel.availability();
+        } catch (error) {
+          availabilityNoArgs = "erro: " + (error && error.message ? error.message : String(error));
+        }
+
+        try {
+          availabilityWithLang = await LanguageModel.availability({
+            expectedInputLanguages: ["pt"],
+            expectedOutputLanguages: ["en"],
+          });
+        } catch (error) {
+          availabilityWithLang = "erro: " + (error && error.message ? error.message : String(error));
+        }
+
+        const lines = [
+          "LanguageModel presente: sim",
+          "availability() sem args: " + availabilityNoArgs,
+          "availability() com idiomas: " + availabilityWithLang,
+          "params() disponivel: " + (typeof LanguageModel.params === "function" ? "sim" : "nao"),
+          "create() disponivel: " + (typeof LanguageModel.create === "function" ? "sim" : "nao"),
+          "Metodos estaticos: " + staticMethods.join(", "),
+          "Metodos de sessao: " + prototypeMethods.join(", "),
+        ];
+
+        diagOutput.textContent = lines.join("\n");
+      }
+
+      async function runPrompt() {
+        startBtn.disabled = true;
+
+        try {
+          if (!hasLanguageModelApi()) {
+            throw new Error(
+              "API LanguageModel nao disponivel. Use Chrome Canary/Dev com Web AI habilitado (chrome://flags)."
+            );
+          }
+
+          setMessage("Verificando disponibilidade do modelo...", "muted");
+
+          const availability = await LanguageModel.availability({
+            expectedInputLanguages: ["pt"],
+            expectedOutputLanguages: ["en"],
+          });
+
+          if (availability === "unavailable") {
+            throw new Error("Modelo indisponivel neste navegador/perfil.");
+          }
+
+          if (availability === "downloadable") {
+            setMessage("Modelo disponivel para download. Iniciando download local...", "muted");
+          }
+
+          const createOptions = {
+            expectedInputLanguages: ["pt"],
+            expectedOutputLanguages: ["en"],
+            initialPrompts: [
+              {
+                role: "system",
+                content: "You are an AI assistant that responds clearly and objectively.",
+              },
+            ],
+          };
+
+          if (typeof LanguageModel.params === "function") {
+            const params = await LanguageModel.params({
+              expectedInputLanguages: ["pt"],
+              expectedOutputLanguages: ["en"],
+            });
+
+            if (params && typeof params.defaultTemperature === "number") {
+              createOptions.temperature = params.defaultTemperature;
+            }
+
+            if (params && typeof params.defaultTopK === "number") {
+              createOptions.topK = params.defaultTopK;
+            }
+          }
+
+          const session = await LanguageModel.create(createOptions);
+
+          const question = "Who invented JavaScript?";
+          const messages = [
+            {
+              role: "user",
+              content: question,
+            },
+          ];
+
+          let fullText = "";
+          setMessage("", "");
+
+          if (typeof session.promptStreaming === "function") {
+            const stream = await session.promptStreaming(messages);
+            for await (const token of stream) {
+              fullText += token;
+              output.innerHTML = markdown.toHTML(fullText);
+            }
+          } else {
+            const response = await session.prompt(messages);
+            fullText = typeof response === "string" ? response : String(response);
+            output.innerHTML = markdown.toHTML(fullText);
+          }
+        } catch (error) {
+          console.error(error);
+          const details = error && error.message ? error.message : String(error);
+          setMessage(
+            "Erro ao executar. " +
+              details +
+              "<br><br>Dica: rode por servidor local (http://localhost), nao em file://, e confira se a API Web AI esta habilitada no Chrome.",
+            "error"
+          );
+        } finally {
+          startBtn.disabled = false;
+        }
+      }
+
+      startBtn.addEventListener("click", runPrompt);
+      diagBtn.addEventListener("click", runDiagnostics);
+      runDiagnostics();
+    </script>
+  </body>
+</html>
