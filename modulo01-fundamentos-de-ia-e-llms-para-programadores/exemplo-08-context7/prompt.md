@@ -60,3 +60,5 @@ Responda em português e siga EXATAMENTE esta ordem:
 3) Dependências (lista curta)
 4) Estrutura de arquivos criados (lib/auth.ts, app/api/auth/[...all]/route.ts, etc)
 5) Comandos npm (na ordem: instalar dependências, rodar migrate, rodar dev)
+
+> **Nota:** Crie um subdiretório `nextjs-better-auth-demo/` na mesma pasta onde está este arquivo `prompt.md` e coloque todo o projeto dentro dele.

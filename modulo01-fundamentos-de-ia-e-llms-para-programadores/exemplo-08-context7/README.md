@@ -30,3 +30,12 @@ A extensão configurou automaticamente o servidor MCP no ambiente, sem necessida
 
 Com o servidor MCP do Context7 ativo, o GitHub Copilot (e outros clientes MCP compatíveis) passa a ter acesso à ferramenta `resolve-library-id` e `get-library-docs`, permitindo consultar documentação atualizada de qualquer biblioteca suportada durante a geração de código.
 
+## o Prompt
+
+Criado o arquivo `prompt.md` com a estrutura completa da tarefa.
+
+Conteúdo copiado para o chat com a instrução:
+
+> "Crie um subdiretório `nextjs-better-auth-demo/` na mesma pasta onde está este arquivo `prompt.md` e coloque todo o projeto dentro dele."
+
+O agente de IA utilizado foi o **Claude Sonnet 4.6** via GitHub Copilot.

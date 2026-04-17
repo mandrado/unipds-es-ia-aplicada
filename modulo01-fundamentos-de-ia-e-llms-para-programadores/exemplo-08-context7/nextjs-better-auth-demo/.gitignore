@@ -1,0 +1,14 @@
+# dependencies
+node_modules/
+.next/
+
+# database
+*.sqlite
+
+# environment
+.env.local
+.env*.local
+
+# build
+out/
+dist/
