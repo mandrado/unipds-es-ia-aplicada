@@ -1,14 +1,18 @@
 {
     "servers": {
-        "playwright": {
-            "command": "npx",
-            "args": [
-                "@playwright/mcp@latest",
-                "--extension"
-            ],
-            "env": {
-                "PLAYWRIGHT_MCP_EXTENSION_TOKEN": "YOUR_TOKEN_HERE"
-            }
-        }
+		"microsoft/playwright-mcp": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"@playwright/mcp@latest",
+				"--extension"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.0.1-seed",
+			"env": {
+				"PLAYWRIGHT_MCP_EXTENSION_TOKEN": "YOUR_PLAYWRIGHT_MCP_EXTENSION_TOKEN_HERE",
+				"PLAYWRIGHT_MCP_BROWSERS": "chrome"
+			}
+		}
     }
 }
