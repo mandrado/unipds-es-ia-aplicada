@@ -1,65 +1,116 @@
-#  USANDO IA PARA: COLHER DADOS DE TELEMETRIA DE APPS
-## 1. INTRODUÇÃO
-Neste exemplo, vamos configurar o Grafana MCP (Metrics Collection Pipeline) para coletar dados de telemetria de um aplicativo Next.js instrumentado com OpenTelemetry. O Grafana MCP é uma solução leve e eficiente para coletar, processar e enviar métricas para o Grafana Cloud.
+# IA + TELEMETRIA: INVESTIGANDO ERROS COM GRAFANA MCP
 
-## 2. CONFIGURAÇÃO DO PROJETO
-Precisa ter o docker instalado e rodando
-Acesse o diretório alumnus/infra e execute os comandos
-Rode `docker-compose -f docker-compose-infra.yaml up --wait` 
-acesse http://localhost:3000 para acessar o Grafana.
+> **O que foi feito:** Um agente de IA (Claude Sonnet 4.6 via GitHub Copilot) investigou erros 500 em um endpoint usando apenas dados de telemetria — sem acesso ao código-fonte — e gerou um [relatório de causa raiz](./grafana-mcp-connections-incident-report.md) automaticamente.
 
-## 3. INSTRUMENTAÇÃO DO APLICATIVO
-Volte uma pasta e acesse cd ..\_alumnus
-instale as dependências com `npm ci`
-depois rode o programa com `npm start`
+---
 
-Neste momento o app começa a gerar as métricas e gravar os dados dentro do banco de dados.
-Aguarde 5 minutos para começar a receber os dados no Grafana.
+## Visão Geral
 
-## 4. CONFIGURAR MCP DO GRAFANA
-Dentro do README.md do diretório `alumnus`, veja as instruções para configurar o MCP do Grafana.
+| Componente | Função |
+|---|---|
+| **App Alumnus** | Aplicação Next.js que emite dados de telemetria via OpenTelemetry |
+| **Prometheus** | Coleta e armazena métricas de performance |
+| **Grafana Loki** | Centraliza os logs |
+| **Grafana Tempo** | Armazena os traces distribuídos |
+| **Grafana** | Visualiza e correlaciona os três sinais |
+| **Grafana MCP** | Servidor MCP que expõe o Grafana para agentes de IA no VS Code |
 
-O agente de IA utilizado foi o **Claude Sonnet 4.6** via GitHub Copilot.
+Toda a infraestrutura roda localmente com **Docker Compose**.
 
-## 5. INFRAESTRUTURA DO PROJETO
-Utilizado uma aplicação chamada Aluminus, já preparada para emitir dados de telemetria. A instrumentação foi feita com OpenTelemetry, que é hoje o padrão mais adotado para coleta unificada de telemetria.
+---
 
-Esses dados seram enviados para:
-- Prometheus: coleta e armazena métricas de performance.
-- Grafana Tempo: armazena os traces.
-- Grafana Loki: centraliza os logs.
-- Grafana: visualiza e correlaciona os sinais em painéis interativos.
+## Como Reproduzir
 
-Tudo foi orquestrado com Docker Compose para simular um ambiente real de produção.
+### 1. Subir a infraestrutura
 
-### O papel do Grafana MCP e da IA
+```bash
+cd alumnus/infra
+docker-compose -f docker-compose-infra.yaml up --wait
+```
 
-Para transformar esses dados em conhecimento acionável, utilizei um servidor MCP conectado ao Grafana. Com isso, um agente de IA integrado ao VS Code foi capaz de fazer investigações reais com base em um único prompt: "Estou recebendo erro 500 neste endpoint, descubra o motivo e gere um relatório."
-Como funciona a investigação automatizada
-1. Coleta de métricas: a IA acessa o Prometheus e verifica, por exemplo, que todos os requests estão retornando erro 500.
-2. Exploração de logs: acessa o Grafana Loki para analisar os logs relacionados, identificando mensagens de erro.
-3. Tracing: consulta o Grafana Tempo para reconstruir a cadeia de chamadas e localizar gargalos.
-4. Correlação dos sinais: cruza os dados das três fontes e descobre que o problema está relacionado a um vazamento de conexões com o banco de dados.
-O mais incrível é que a IA executa toda essa análise sem acesso ao código-fonte. Ela atua apenas com base nos dados expostos pelas ferramentas de telemetria.
+Acesse o Grafana em http://localhost:3000.
 
-### Diagnóstico e relatório final
+### 2. Rodar o aplicativo
 
-O agente gerou um relatório estruturado com:
-- Nome do endpoint afetado.
-- Tempo de resposta das requisições.
-- Stack trace com falha na conexão com o banco.
-- Causa raiz: múltiplas conexões sendo criadas a cada requisição, sem reutilização.
-- Linhas suspeitas de código onde o leak ocorre (mesmo sem ter acessado o repositório).
+```bash
+cd alumnus/_alumnus
+npm ci
+npm start
+```
 
-### Impacto e aplicação real
-Essa prática foi usada para resolver um problema real de vulnerabilidade na minha infraestrutura em produção. O poder de usar IA com telemetria permitiu encontrar e explicar rapidamente falhas graves de performance.
-Por que usar essa abordagem?
-- Redução do tempo de investigação: uma tarefa que levaria horas pode ser feita em minutos.
-- Precisão no diagnóstico: evita achismos e foca nos dados concretos.
-- Menor dependência do código-fonte: ideal para sistemas legados ou desconhecidos.
-- Alta integração com ferramentas do mercado: funciona com tecnologias amplamente utilizadas.
+> Aguarde ~5 minutos para os dados aparecerem no Grafana.
 
-### Considerações finais
-Colocar a IA para trabalhar com telemetria é o futuro da observabilidade. Ferramentas gratuitas e poderosas estão à nossa disposição, como Grafana, OpenTelemetry e Prometheus. Integradas a agentes inteligentes via MCP, transformam dados brutos em diagnósticos claros, rápidos e confiáveis.
+### 3. Configurar o MCP do Grafana no VS Code
 
-Se você ainda está usando logs manuais e debugging tradicional, considere experimentar essa abordagem. O ganho de produtividade e clareza é imediato e vale cada segundo investido na configuração inicial.
+Consulte as instruções no [README da pasta alumnus](./alumnus/README.md).
+
+### 4. Investigar com IA
+
+Abra o GitHub Copilot em um diretório vazio e cole o prompt abaixo:
+
+```
+I'm seeing 500 errors on the /students/db-leaky-connections endpoint for my application.
+
+Please investigate and provide a comprehensive report from the last 15 minutes including:
+
+1. Query Prometheus metrics
+   - Get requests that ended as 500 for this endpoint
+   - Include response times for failure cases
+
+2. Query Loki logs - Correlate logs with the metrics found
+   - Show all error-level logs for this endpoint
+   - Extract complete error messages and stack traces
+   - Show the pattern of failed requests over time
+
+3. Query Tempo traces - Correlate traces with logs and metrics
+   - Get traces related to the failed requests
+   - Show the span hierarchy and operations
+   - Include any error spans with exception details
+
+4. Root cause analysis
+   - Based on error patterns, metrics, stack traces, and trace analysis
+   - Identify the exact file and line number causing the issue
+
+5. Provide a diagnosis table correlating all telemetry data.
+```
+
+> Ao final, peça para salvar o relatório em um arquivo Markdown no mesmo diretório.
+
+### 5. Parar os serviços
+
+```bash
+docker-compose -f .\docker-compose-infra.yaml down
+```
+
+---
+
+## Como a IA Investigou (passo a passo)
+
+1. **Métricas (Prometheus):** verificou que 100% dos requests ao endpoint retornavam 500.
+2. **Logs (Loki):** identificou mensagens de erro e stack traces relacionados a falhas de conexão com o banco.
+3. **Traces (Tempo):** reconstruiu a cadeia de chamadas e localizou o span com erro.
+4. **Correlação:** cruzou os três sinais e identificou a causa raiz — vazamento de conexões com o banco de dados.
+
+**Resultado:** o agente apontou as linhas suspeitas do código sem ter acesso ao repositório.
+
+---
+
+## Resultado: Relatório Gerado
+
+Ver [grafana-mcp-connections-incident-report.md](./grafana-mcp-connections-incident-report.md)
+
+| Item | Detalhe |
+|---|---|
+| Endpoint afetado | `/students/db-leaky-connections` |
+| Taxa de erro | 100% (HTTP 500) |
+| Causa raiz | Conexões com o banco criadas por request sem reutilização (pool leak) |
+| Detectado sem | acesso ao código-fonte |
+
+---
+
+## Por que essa abordagem vale a pena?
+
+- **Velocidade:** investigação que levaria horas feita em minutos.
+- **Precisão:** diagnóstico baseado em dados reais, sem achismo.
+- **Independência do código:** funciona em sistemas legados ou desconhecidos.
+- **Stack padrão de mercado:** OpenTelemetry + Prometheus + Loki + Tempo + Grafana.
