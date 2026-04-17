@@ -67,3 +67,33 @@ yarn add playwright-mcp
 	- Execução dos testes (`npm test`).
 	- Upload do relatório HTML em caso de falha.
 9. Execução local validada com sucesso: 8 testes passando.
+
+## Resumo da Sessão Atual (Registro e Aprendizado)
+
+Nesta etapa, a suíte foi evoluída com foco em comportamento real do formulário e em eliminação de duplicidades.
+
+### O que foi realizado
+
+1. A aplicação foi navegada em produção para mapear elementos e mensagens reais de validação antes de escrever os testes.
+2. Foram criados cenários cobrindo:
+	- Submissão válida do formulário e atualização da lista.
+	- Validação de formulário com URL inválida.
+	- Comportamento dos campos (preenchimento e limpeza após envio bem-sucedido).
+	- Verificações estruturais da home (título, campos, cards iniciais e `alt` das imagens).
+3. A execução foi ajustada para abrir o **Google Chrome instalado no computador** (modo headed), em vez do navegador embutido/extensão.
+4. A navegação dos testes foi corrigida para a URL completa da aplicação (`/vanilla-js-web-app-example/`) para evitar execução na raiz do domínio.
+5. Os testes antigos e novos foram consolidados em uma única suíte para evitar cenários duplicados.
+6. O arquivo consolidado foi renomeado para o padrão do projeto: `tests/home.spec.ts`.
+
+### Estado final validado
+
+- Arquivo de teste principal: `tests/home.spec.ts`.
+- Execução local no Chrome concluída com sucesso.
+- Resultado final da suíte: **10 testes passando**.
+
+### Aprendizados principais
+
+- Basear os testes no comportamento observado da página reduz falsos positivos e asserts frágeis.
+- Preferir seletores acessíveis (`getByRole` com nome) aumenta legibilidade e manutenção da suíte.
+- Consolidar arquivos de testes evita redundância, reduz custo de manutenção e facilita onboarding.
+- Em cenários com GitHub Pages/subpaths, validar `baseURL` + `goto` evita erros de rota e timeout.
