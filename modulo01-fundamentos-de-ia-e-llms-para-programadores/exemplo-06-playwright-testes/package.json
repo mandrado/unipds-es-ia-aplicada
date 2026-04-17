@@ -1,0 +1,11 @@
+{
+  "name": "exemplo-06-playwright-testes",
+  "version": "1.0.0",
+  "description": "Playwright tests for vanilla-js-web-app-example",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

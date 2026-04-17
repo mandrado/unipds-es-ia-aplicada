@@ -1,7 +1,7 @@
 Playwright-only setup (with CI)
 
 Goal: Set up Playwright to test the app at:
-https://erickwendel.github.io/vanilla-js-web-app-example/
+https://mandrado.github.io/vanilla-js-web-app-example/
 
 What to include
 - Install only Playwright test runner (no extra frameworks)
