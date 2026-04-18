@@ -38,3 +38,66 @@ Além dos modelos já disponibilizados, é possível plugar suas próprias chave
 Usar o OpenRouter é uma excelente estratégia para quem deseja liberdade na escolha de modelos, economia de custos e simplicidade na integração com aplicações reais. Para protótipos, testes e até mesmo alguns usos em produção, ele se mostra uma solução robusta e acessível.
 
 Recomendo fortemente que você experimente o OpenRouter nos seus projetos, explore diferentes modelos e construa sua própria arquitetura de IA sem amarras.
+
+---
+
+## Como executar o script `request.sh`
+
+O arquivo `request.sh` contém um exemplo de chamada à API do OpenRouter via `curl`. Para executá-lo, use o **Git Bash**:
+
+```bash
+sh request.sh
+```
+
+> **Atenção:** execute o comando acima **dentro do diretório** `exemplo-11-openrouter`, ou seja, com o Git Bash aberto nessa pasta.
+
+### Variáveis de ambiente (.env)
+
+O script carrega as variáveis de ambiente a partir de um arquivo `.env` no mesmo diretório. Copie o arquivo de exemplo e preencha com sua chave:
+
+```bash
+cp .env-sample .env
+# edite o .env e insira sua OPENROUTER_API_KEY
+```
+
+### Por que `source .env` falha no Git Bash?
+
+O comando `source .env` busca o arquivo `.env` relativo ao **diretório de trabalho atual (CWD)** do shell, não relativo à localização do script. No Git Bash, isso é instável: dependendo de como o shell foi aberto ou de onde o comando foi executado, o CWD pode não ser o diretório do script, fazendo com que o `.env` não seja encontrado mesmo estando na mesma pasta, retornando algo como:
+
+```bash
+$ sh request.sh 
+request.sh: line 3: source: .env: file not found
+```
+
+**Solução aplicada no script:** em vez de `source .env`, o script usa:
+
+```bash
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/.env"
+```
+
+`$(dirname "$0")` retorna o diretório onde o próprio script está localizado, garantindo que o `.env` seja sempre encontrado independentemente do CWD do shell no momento da execução.
+
+---
+
+## Como executar o script `request.ps1`
+
+O arquivo `request.ps1` é equivalente ao `request.sh`, mas para rodar no **terminal PowerShell** (Windows). Utilize o mesmo `.env` criado anteriormente:
+
+```powershell
+.\request.ps1
+```
+
+### Diferenças em relação ao `request.sh`
+
+| `request.sh` (Git Bash) | `request.ps1` (PowerShell) |
+|---|---|
+| `source "$SCRIPT_DIR/.env"` | `Get-Content "$PSScriptRoot\.env"` — `$PSScriptRoot` é o equivalente nativo do PS |
+| `curl` | `curl.exe` — evita o alias `Invoke-WebRequest` do PowerShell |
+| `'...'` com concatenação de variável | here-string `@"..."@` |
+| `$VAR` | `$env:VAR` para variáveis de ambiente |
+| `\` continuação de linha | `` ` `` continuação de linha |
+
+### Atenção: aspas no valor do `.env`
+
+O arquivo `.env-sample` usa aspas duplas no valor (`OPENROUTER_API_KEY="sua_chave"`). O parser do `request.ps1` remove essas aspas automaticamente ao carregar as variáveis, evitando que o header de autenticação fique malformado (`Bearer "sua_chave"` em vez de `Bearer sua_chave`).

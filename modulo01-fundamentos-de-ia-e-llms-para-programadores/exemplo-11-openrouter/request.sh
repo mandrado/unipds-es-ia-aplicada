@@ -1,10 +1,11 @@
-source .env
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/.env"
 
 API_URL="https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_SITE_URL=http://localhost:3000
 OPENROUTER_SITE_NAME="My Example"
 
-NLP_MODEL="google/gemma-3-27b-it:free"
+NLP_MODEL="google/gemma-4-31b-it:free"
 
 curl --silent -X POST "$API_URL" \
 -H "Content-Type: applicaton/json" \
@@ -28,7 +29,7 @@ curl --silent -X POST "$API_URL" \
 # {
 #   "id": "gen-1768350223-TGhNha2xp2OhQfHxwTkA",
 #   "provider": "Google AI Studio",
-#   "model": "google/gemma-3-27b-it:free",
+#   "model": "google/gemma-4-31b-it:free",
 #   "object": "chat.completion",
 #   "created": 1768350223,
 #   "choices": [
