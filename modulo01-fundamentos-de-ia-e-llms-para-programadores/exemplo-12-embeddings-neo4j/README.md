@@ -72,3 +72,25 @@ Padrao adotado no projeto:
 - `NEO4J_DATABASE`
 
 Com isso, o fluxo de inicializacao e processamento volta a funcionar de forma consistente quando o `.env` e preenchido conforme o modelo.
+
+## Encerrando
+Rode o comando:
+```bash
+npm run infra:down
+```
+
+## O que foi implementado nesta etapa
+
+O objetivo desta etapa foi demonstrar o núcleo de um sistema de RAG sem a camada de geração de linguagem: apenas a indexação e a recuperação por similaridade.
+
+O ponto de partida é um documento PDF — neste caso, uma transcrição de aula sobre tensores. Esse documento é carregado pelo `DocumentProcessor.ts` e dividido em múltiplos fragmentos menores, chamados de **chunks**. Cada chunk é um trecho de texto de tamanho controlado, com uma sobreposição configurável entre fragmentos consecutivos para evitar a perda de contexto nas bordas.
+
+Cada chunk é então convertido em um **embedding**: um vetor numérico de alta dimensão que representa semanticamente o significado daquele trecho. A geração dos embeddings é feita localmente, utilizando o modelo `Xenova/all-MiniLM-L6-v2` via Transformer.js, sem dependência de APIs externas.
+
+Os vetores gerados são armazenados no **Neo4j** como propriedades de nós do tipo `Chunk`. Um índice vetorial é criado sobre esses nós, permitindo que o banco de dados realize buscas por similaridade de forma eficiente.
+
+Ao realizar uma pergunta — por exemplo, "o que é one hot encoding?" — a consulta também é convertida em um embedding. O Neo4j então compara esse vetor com todos os vetores armazenados e retorna os chunks cujo significado é matematicamente mais próximo da pergunta. Não é uma busca por palavras exatas: é uma busca por **proximidade semântica**.
+
+O resultado é que, mesmo que a pergunta use palavras diferentes das que aparecem no documento, o sistema é capaz de recuperar os trechos mais relevantes. Esse mecanismo de recuperação é exatamente o "R" (Retrieval) no acrônimo RAG.
+
+

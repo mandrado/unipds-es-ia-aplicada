@@ -3,6 +3,7 @@ import { CONFIG } from "./config.ts";
 import { DocumentProcessor } from "./documentProcessor.ts";
 import { type PretrainedModelOptions } from "@huggingface/transformers";
 import { Neo4jVectorStore } from "@langchain/community/vectorstores/neo4j_vector";
+import { displayResults } from "./util.ts";
 
 let _neo4jVectorStore = null;
 
@@ -46,8 +47,35 @@ try {
         await _neo4jVectorStore.addDocuments([doc]);
     }
     console.log("\n✅ Todos os documentos processados e armazenados com sucesso no Neo4j!\n");
-    console.log(Object.entries(documents), "\n");
+    //console.log(Object.entries(documents), "\n");
+
+    // ==================== STEP 2: RUN SIMILARITY SEARCH ====================
+    console.log("🔍 ETAPA 2: Executando buscas por similaridade...\n");
+    const questions = [
+        "O que significa treinar uma rede neural?",
+        "O que são tensores e como são representados em JavaScript?",
+        "Como converter objetos JavaScript em tensores?",
+        "O que é normalização de dados e por que é necessária?",
+        "Como funciona uma rede neural no TensorFlow.js?",
+        "O que significa treinar uma rede neural?",
+        "o que é hot enconding e quando usar?"        
+    ];
+    for(const question of questions){
+        console.log(`\n${'='.repeat(80)}`);
+        console.log(`❓ PERGUNTA: ${question}`);
+        console.log(`${'='.repeat(80)}\n`);
+
+        const results = await _neo4jVectorStore.
+        similaritySearch(
+            question,
+            CONFIG.similarity.topK
+        );
+        displayResults(results)
+    }
 
 } catch (error) {
     console.error("Erro ao processar documentos:", error);
+}
+finally {
+    await _neo4jVectorStore?.close();
 }
