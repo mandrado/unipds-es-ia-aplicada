@@ -1,49 +1,146 @@
-# Criando o primeiro RAG com JavaScript e Neo4j
+# RAG com JavaScript + Neo4j (Embeddings + Busca Vetorial + Resposta com LLM)
 
-Apresenta-se como criar um projeto completo de RAG utilizando JavaScript e Neo4j. A proposta é transformar uma transcrição de aula em uma base consultável, capaz de responder perguntas com base em busca por similaridade, antes mesmo de usar modelos generativos.
-Inicia-se o projeto com a leitura e preparação do conteúdo em formato PDF. A transcrição é dividida em pedaços coerentes, chamados de chunks, cada um representando um trecho com sentido completo. Em seguida, utiliza-se a biblioteca transformer.js para gerar os embeddings localmente. Isso significa que não há dependência de serviços externos, chaves de API ou infraestrutura pesada — tudo executado localmente, de forma leve e eficiente.
-Esses embeddings, que são vetores numéricos representando o significado de cada chunk, são armazenados em um banco vetorial dentro do Neo4j. Cada chunk fica associado a metadados como o minuto da aula, o nome do arquivo e a posição no texto. Isso traz não apenas contexto, mas também a possibilidade de organizar e refinar as buscas posteriormente.
-Na segunda fase do projeto, implementa-se uma etapa de consulta por similaridade. O sistema converte as perguntas em embeddings, compara com os armazenados no Neo4j e retorna os trechos mais próximos. Essa etapa permite criar um sistema de memória não paramétrica, fundamental para o funcionamento do RAG, garantindo que o modelo receba sempre o contexto certo antes de gerar qualquer resposta.
-A construção dessa base deixa claro o quanto a engenharia de dados é essencial para IA. O modelo só é bom quando alimentado com dados relevantes e bem estruturados. O controle sobre os embeddings, sobre os metadados e sobre a forma como os trechos são indexados fornece autonomia para criar uma arquitetura de IA verdadeiramente útil.
-Finaliza-se este capítulo com a certeza de que dominar esse tipo de projeto é o passo mais importante para qualquer desenvolvedor que queira levar IA a sério. Com esse tipo de estrutura, é possível alimentar modelos com conhecimento real, atualizado e alinhado ao domínio específico. E o melhor: sem depender de soluções prontas ou fechadas.
+Este projeto demonstra um fluxo de RAG (Retrieval-Augmented Generation) com:
 
-## Instrucoes de Execucao do Projeto
+1. Leitura de um PDF (`tensores.pdf`)
+2. Quebra do texto em chunks
+3. Geração de embeddings localmente com `@huggingface/transformers`
+4. Indexacao vetorial no Neo4j
+5. Busca por similaridade
+6. Geracao de resposta com LLM via OpenRouter
 
-Cria-se o arquivo `.env` a partir do modelo `.env-template`, com o preenchimento das variaveis necessarias.
+## Visao Geral da Arquitetura
 
-Instalam-se as dependencias do projeto:
+- `src/documentProcessor.ts`: carrega e quebra o PDF em chunks.
+- `src/config.ts`: centraliza configuracoes de embeddings, Neo4j, prompts e LLM.
+- `src/index.ts`: orquestra todo o pipeline (ingestao, indexacao, busca e resposta).
+- `src/ai.ts`: executa busca vetorial + montagem de prompt + chamada do modelo.
+- `prompts/template.txt`: template de prompt.
+- `prompts/answerPrompt.json`: regras e metadados do comportamento da resposta.
+- `docker-compose.yml`: sobe o Neo4j local.
+- `.env-template`: variaveis de ambiente obrigatorias.
+
+## Pre-requisitos
+
+- Node.js `v22.13.1` (conforme `package.json`)
+- Docker em execucao
+- NPM
+
+## Configuracao de Ambiente
+
+1. Copie o arquivo de exemplo:
+
+```bash
+copy .env-template .env
+```
+
+2. Ajuste as variaveis no `.env`:
+
+- `OPENROUTER_API_KEY`: chave da API OpenRouter (obrigatoria para etapa de resposta)
+- `NLP_MODEL`: modelo de chat usado para gerar resposta
+- `EMBEDDING_MODEL`: modelo local de embedding (ex: `Xenova/all-MiniLM-L6-v2`)
+- `NEO4J_USER`, `NEO4J_PASSWORD`, `NEO4J_URI`, `NEO4J_DATABASE`
+
+Observacao importante:
+Os embeddings sao gerados localmente, mas a resposta final do RAG usa um modelo remoto via OpenRouter.
+
+## Instalacao
+
+```bash
+npm ci
+```
+
+Tambem funciona com:
 
 ```bash
 npm install
 ```
 
-Antes de iniciar o projeto, garante-se que o Docker esteja em execucao e executam-se os comandos:
+## Subindo a Infra (Neo4j)
 
 ```bash
 npm run infra:up
-npm run start
 ```
 
-Aguarda-se a inicializacao do Neo4j e valida-se no navegador em http://localhost:7474/browser/ se a base ainda esta vazia.
+Depois, valide o Neo4j Browser em:
 
-A senha de conexao com o banco de dados fica no arquivo `.env`. Recomenda-se alterar a senha no ambiente local para um valor seguro.
+- http://localhost:7474/browser/
 
-### Processamento do Documento
+Credenciais padrao do compose local:
 
-O arquivo `./tensores.pdf` e processado pela pipeline definida em `./src/DocumentProcessor.ts` e `./src/index.ts`.
+- usuario: `neo4j`
+- senha: `password`
 
-Executa-se o comando:
+Se voce alterar a senha no `.env`, mantenha a consistencia com o `docker-compose.yml`.
+
+## Executando o Pipeline
+
+Modo desenvolvimento (watch):
 
 ```bash
 npm run dev
 ```
 
-## Encerrando
-Rode o comando:
+Modo execucao unica:
+
+```bash
+npm run start
+```
+
+Durante a execucao, o sistema:
+
+1. Carrega o `tensores.pdf`
+2. Gera chunks de texto
+3. Limpa os nos antigos do label `Chunk`
+4. Salva os novos documentos no Neo4j (`addDocuments`)
+5. Faz busca por similaridade para as perguntas definidas em `src/index.ts`
+6. Gera resposta via LLM
+7. Salva as respostas em arquivos `.md` na pasta `respostas/`
+
+## Comparativo com o roteiro (`script.txt`)
+
+Itens citados no roteiro e onde estao no projeto:
+
+- `config.js` -> `src/config.ts`
+- `util.js` -> `src/util.ts`
+- `documentProcessor` -> `src/documentProcessor.ts`
+- `embeddings` -> inicializados em `src/index.ts`
+- `VectorStoreManager.addDocuments/clearAll` -> implementado no fluxo de `src/index.ts` com `Neo4jVectorStore.addDocuments(...)` e limpeza via query Cypher
+- `docker-compose` -> `docker-compose.yml`
+- `tensores.pdf` -> raiz do projeto
+
+## Ajustando perguntas e comportamento
+
+- Perguntas de teste: edite o array `questions` em `src/index.ts`
+- Regras do assistente: edite `prompts/answerPrompt.json`
+- Template do prompt: edite `prompts/template.txt`
+- Quantidade de documentos recuperados: ajuste `similarity.topK` em `src/config.ts`
+
+## Encerrando a Infra
+
 ```bash
 npm run infra:down
 ```
 
-## O que foi implementado nesta etapa
+## Troubleshooting rapido
 
-...
+- Erro de conexao com Neo4j:
+	- confirme `npm run infra:up`
+	- valide `NEO4J_URI`, usuario e senha no `.env`
+- Falha de resposta com LLM:
+	- confira `OPENROUTER_API_KEY`
+	- valide `NLP_MODEL`
+- Nao encontrou contexto relevante:
+	- revise o PDF de entrada
+	- ajuste `chunkSize/chunkOverlap` em `src/config.ts`
+	- ajuste `similarity.topK`
+
+## O que esta implementado nesta etapa
+
+- Ingestao de PDF
+- Chunking de texto
+- Embeddings locais
+- Indexacao vetorial no Neo4j
+- Busca por similaridade
+- Prompting estruturado com template + regras
+- Geracao e persistencia de respostas em Markdown
