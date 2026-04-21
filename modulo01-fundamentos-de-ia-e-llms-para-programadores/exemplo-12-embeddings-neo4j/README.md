@@ -22,3 +22,53 @@ Esse processo deixa claro que a busca por similaridade é um componente essencia
 
 ## Conclusão
 A compreensão profunda de embeddings e vector databases é vital para qualquer desenvolvedor que deseje trabalhar com sistemas de IA mais robustos e confiáveis. Eles são a espinha dorsal das aplicações baseadas em RAG e são o elo entre o armazenamento eficiente e a inteligência contextual das respostas. No próximo capítulo, conecta-se esse mecanismo de embeddings com um modelo de linguagem para realizar respostas completas, fechando o ciclo do RAG com geração de linguagem natural.
+
+
+## Instrucoes de Execucao do Projeto
+
+Cria-se o arquivo `.env` a partir do modelo `.env-template`, com o preenchimento das variaveis necessarias.
+
+Instalam-se as dependencias do projeto:
+
+```bash
+npm install
+```
+
+Antes de iniciar o projeto, garante-se que o Docker esteja em execucao e executam-se os comandos:
+
+```bash
+npm run infra:up
+npm run start
+```
+
+Aguarda-se a inicializacao do Neo4j e valida-se no navegador em http://localhost:7474/browser/ se a base ainda esta vazia.
+
+A senha de conexao com o banco de dados fica no arquivo `.env`. Recomenda-se alterar a senha no ambiente local para um valor seguro.
+
+### Processamento do Documento
+
+O arquivo `./tensores.pdf` e processado pela pipeline definida em `./src/DocumentProcessor.ts` e `./src/index.ts`.
+
+Executa-se o comando:
+
+```bash
+npm run dev
+```
+
+## Adendo (Atualizacao apos o ultimo commit)
+
+Foi identificada e corrigida uma inconsistência nas variaveis de ambiente do Neo4j:
+
+- O codigo utilizava `NEO4J_USER`.
+- O modelo `.env-template` estava com `NEO4J_USERNAME`.
+
+Essa divergencia causava erro de autenticacao no Neo4j (`Unsupported authentication token, missing key principal`), pois o usuario nao era carregado corretamente.
+
+Padrao adotado no projeto:
+
+- `NEO4J_USER`
+- `NEO4J_PASSWORD`
+- `NEO4J_URI`
+- `NEO4J_DATABASE`
+
+Com isso, o fluxo de inicializacao e processamento volta a funcionar de forma consistente quando o `.env` e preenchido conforme o modelo.
