@@ -1,4 +1,4 @@
-## O que são Embeddings e Vector Databases
+# O que são Embeddings e Vector Databases
 Quando falamos de inteligência artificial hoje em dia, a primeira imagem que surge na mente da maioria das pessoas é a de um chatbot respondendo perguntas de forma articulada. No entanto, por trás dessa interface interativa e sofisticada, existe um componente muito mais fundamental e menos glamouroso: os embeddings e a busca por similaridade. Esses são os verdadeiros motores que tornam as soluções de IA realmente úteis e relevantes para os usuários.
 Neste capítulo, apresenta-se de maneira prática como isso funciona. A proposta é apresentar a mecânica que sustenta o funcionamento de sistemas de IA, sem truques ou aparências polidas, e sem a interferência de modelos generativos. Explora-se o conceito de embeddings, como eles são gerados, armazenados e utilizados em buscas por similaridade dentro de um banco de dados vetorial, utilizando o Neo4j.
 
