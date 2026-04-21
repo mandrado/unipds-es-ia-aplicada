@@ -3,7 +3,8 @@ import { CONFIG } from "./config.ts";
 import { DocumentProcessor } from "./documentProcessor.ts";
 import { type PretrainedModelOptions } from "@huggingface/transformers";
 import { Neo4jVectorStore } from "@langchain/community/vectorstores/neo4j_vector";
-import { displayResults } from "./util.ts";
+import { ChatOpenAI } from "@langchain/openai";
+import { AI } from "./ai.ts";
 
 let _neo4jVectorStore = null;
 
@@ -31,6 +32,17 @@ try {
         pretrainedOptions: CONFIG.embedding.pretrainedOptions as PretrainedModelOptions,
     });
 
+    const npModel = new ChatOpenAI({
+        temperature: CONFIG.openRouter.temperature,
+        maxRetries: CONFIG.openRouter.maxRetries,
+        modelName: CONFIG.openRouter.nlpModel,
+        openAIApiKey: CONFIG.openRouter.apiKey,
+        configuration: {
+            baseURL: CONFIG.openRouter.url,
+            defaultHeaders: CONFIG.openRouter.defaultHeaders
+        },
+    });
+
     // const response = await embeddings.embedQuery("JavaScript?");
     // console.log("Embedding da consulta:", response);
     // const response = await embeddings.embedDocuments(["JavaScript?"]);
@@ -38,11 +50,11 @@ try {
 
     _neo4jVectorStore = await Neo4jVectorStore.fromExistingGraph(
         embeddings,
-        CONFIG.neo4j    
+        CONFIG.neo4j
     );
-    
+
     clealAll(_neo4jVectorStore, CONFIG.neo4j.nodeLabel);
-    for(const[index, doc] of documents.entries()){
+    for (const [index, doc] of documents.entries()) {
         console.log(`Adicionando chunk ${index + 1}/${documents.length}...`);
         await _neo4jVectorStore.addDocuments([doc]);
     }
@@ -54,24 +66,34 @@ try {
     const questions = [
         "O que significa treinar uma rede neural?",
         "O que são tensores e como são representados em JavaScript?",
-        "Como converter objetos JavaScript em tensores?",
-        "O que é normalização de dados e por que é necessária?",
-        "Como funciona uma rede neural no TensorFlow.js?",
-        "O que significa treinar uma rede neural?",
-        "o que é hot enconding e quando usar?"        
+        // "Como converter objetos JavaScript em tensores?",
+        // "O que é normalização de dados e por que é necessária?",
+        // "Como funciona uma rede neural no TensorFlow.js?",
+        // "O que significa treinar uma rede neural?",
+        // "o que é hot enconding e quando usar?"        
     ];
-    for(const question of questions){
+
+    const ai = new AI();
+
+    for (const question of questions) {
         console.log(`\n${'='.repeat(80)}`);
         console.log(`❓ PERGUNTA: ${question}`);
         console.log(`${'='.repeat(80)}\n`);
 
-        const results = await _neo4jVectorStore.
-        similaritySearch(
-            question,
-            CONFIG.similarity.topK
-        );
-        displayResults(results)
+        const result = await ai.answerQuestion(question);
+        console.log("Resposta da IA:", result);
+
+        // const results = await _neo4jVectorStore.
+        // similaritySearch(
+        //     question,
+        //     CONFIG.similarity.topK
+        // );
+        // displayResults(results)
     }
+    
+    // Cleanup
+    console.log(`\n${'='.repeat(80)}`);
+    console.log("✅ Processamento concluído com sucesso!\n");
 
 } catch (error) {
     console.error("Erro ao processar documentos:", error);
