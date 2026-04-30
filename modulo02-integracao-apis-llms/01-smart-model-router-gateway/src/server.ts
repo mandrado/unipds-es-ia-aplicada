@@ -1,7 +1,8 @@
 import Fastify from "fastify";
+import { OpenRouterService } from "./openrouterService.ts";
 
 // createServer function that initializes and configures the Fastify application
-export const createServer = () => {
+export const createServer = (routerService: OpenRouterService) => {
     const app = Fastify({ logger: false });
 
     // metodo POST para o endpoint /chat
@@ -19,7 +20,8 @@ export const createServer = () => {
     }, async (request, reply) => {
         try {
             const { question } = request.body as { question: string };
-            return reply.send({ answer: `The question was: ${question}` })
+            const response = await routerService.generate(question);
+            return reply.send({ answer: response });
         } catch (error) {
             console.error("Error handling /chat request:", error);
             return reply.code(500).send({ error: "Internal Server Error" });

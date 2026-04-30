@@ -1,176 +1,240 @@
-# Smart Model Router Gateway
+﻿
+# OpenRouter na prática (JS)
 
-> **Módulo 02 — Integração de APIs com LLMs**
-> Engenharia de Software com IA Aplicada
-> Anotações de aula para revisão futura.
+## Visão Geral
+
+Este projeto demonstra como criar um gateway HTTP inteligente para LLMs usando o OpenRouter, com roteamento multi-modelo configurável, integração segura e testes automatizados. O objetivo é permitir a troca de modelos por configuração, sem refatoração, e comparar critérios como custo, latência e throughput.
+
+**Stack:** Node.js 24 (TypeScript nativo), Fastify 5.7.4, @openrouter/sdk 0.5.1, @types/node.
+
+**Destaques:**
+- Roteamento multi-modelo: escolha automática do modelo por preço, latência ou throughput.
+- Configuração centralizada e validação fail-fast.
+- Testes end-to-end nativos com node:test.
+- Separação clara entre configuração, serviço de integração e API HTTP.
 
 ---
 
-## Objetivo do Projeto
 
-Construir um **gateway inteligente** capaz de receber perguntas via HTTP e rotear as requisições entre múltiplos modelos de LLM. A ideia é abstrair a escolha do modelo — o gateway decide qual modelo usar com base em critérios como custo, latência ou tipo de tarefa.
+## Objetivo
+
+Construir um gateway HTTP capaz de receber perguntas e rotear para diferentes modelos LLM, abstraindo a escolha do modelo por critérios configuráveis.
 
 ---
 
-## Iteração 1 — Scaffolding e ambiente
 
-**Data:** 28/04/2026
-
-### O que fizemos
-
-Configuração do ambiente Node.js 24 com TypeScript nativo e inicialização do projeto com Fastify.
-
-#### Configurar nvm e Node.js 24
-
-```powershell
-nvm install 24
-nvm use 24
-node -v   # v24.x.x
-```
-
-#### Inicializar o projeto
-
-```powershell
-mkdir 01-smart-model-router-gateway
-cd 01-smart-model-router-gateway
-npm init -y
-npm install fastify@5.7.4 @types/node@24
-```
-
-#### Estrutura de arquivos criada
+## Estrutura Essencial
 
 ```
 01-smart-model-router-gateway/
-├── src/
-│   ├── index.ts      ← ponto de entrada, sobe o servidor
-│   └── server.ts     ← factory function que configura o Fastify
+├── .env / .env.example
 ├── package.json
-└── README.md
+├── tsconfig.json
+├── src/
+│   ├── config.ts
+│   ├── openrouterService.ts
+│   ├── server.ts
+│   └── index.ts
+└── tests/
+        └── router.e2e.test.ts
 ```
-
-#### Script de desenvolvimento
-
-```json
-"scripts": {
-  "dev": "node --inspect --watch src/index.ts"
-}
-```
-
-### Pontos importantes para revisão
-
-- **Node.js 24 roda TypeScript nativamente** via "type stripping" — o runtime remove as anotações de tipo em tempo de execução, sem necessidade de `tsc` ou `ts-node`. Isso simplifica o setup de projetos modernos.
-- **`--watch`** reinicia o processo automaticamente ao detectar mudanças nos arquivos. Substitui o `nodemon` para projetos Node.js 24+.
-- **`--inspect`** habilita o protocolo de depuração do V8. É possível conectar o VS Code ou o Chrome DevTools ao processo em execução.
-- **`"type": "module"`** no `package.json` faz o Node.js tratar todos os arquivos `.js` e `.ts` como ES Modules — obrigatório para usar `import`/`export` sem extensão `.cjs`.
 
 ---
 
-## Iteração 2 — Primeiro endpoint e separação de responsabilidades
+---
 
-**Data:** 28/04/2026
 
-### O que fizemos
+## Componentes-Chave
 
-Criação da factory function `createServer()` em `server.ts` com o primeiro endpoint `POST /chat`, e o ponto de entrada `index.ts` que instancia e sobe o servidor.
+- **config.ts**: Centraliza variáveis de ambiente, lista de modelos e estratégia de roteamento. Validação fail-fast impede execução sem API key.
+- **openrouterService.ts**: Classe `OpenRouterService` encapsula integração com o SDK, aceita configuração injetável para testes, expõe método `generate(prompt)` que retorna `{ model, content }`.
+- **server.ts**: Factory function `createServer(routerService)` expõe rota `POST /chat` com validação JSON Schema e tratamento de erro mínimo.
+- **index.ts**: Instancia serviço e servidor, faz o boot na porta configurada.
+- **router.e2e.test.ts**: Testes E2E nativos, validam roteamento por critério (`price`, `throughput`) usando `app.inject()`.
+
+---
+
+
+
+## Princípios de Engenharia
+
+- **Credenciais seguras**: API key no `.env` (não versionado), `.env.example` documenta contrato.
+- **Configuração validada**: fail-fast impede execução sem segredo.
+- **Roteamento multi-modelo**: lista de até 3 modelos, critério configurável (`price`, `latency`, `throughput`).
+- **Fallback automático**: se o modelo prioritário falhar, o próximo da lista é usado.
+- **Testes automatizados**: node:test cobre cenários de roteamento, usando injeção de configuração.
+
+---
+
+
+## Recursos OpenRouter
+
+- Modelos: https://openrouter.ai/models (filtrar por preço, contexto, categoria)
+- Atividades: https://openrouter.ai/activity (uso por modelo/chave)
+- Playground: https://openrouter.ai/chat (comparação de modelos)
+- Rankings: https://openrouter.ai/rankings (trending, market share, apps)
+- Chaves de API: https://openrouter.ai/workspaces/default/keys
+- SDK: `npm install @openrouter/sdk@0.5.1`
+
+---
+
+
+## Stack
+
+| Tecnologia        | Versão | Papel                        |
+|-------------------|--------|------------------------------|
+| Node.js           | 24.x   | Runtime TypeScript nativo    |
+| Fastify           | 5.7.4  | Framework HTTP               |
+| @openrouter/sdk   | 0.5.1  | SDK oficial OpenRouter       |
+| @types/node       | ^24    | Tipos para Node.js           |
+
+---
+
+
+## Exemplo de Configuração
+
+```typescript
+// src/config.ts
+export const config = {
+  apiKey: process.env.OPENROUTER_API_KEY!,
+  models: [
+    'openai/gpt-oss-120b:free',
+    'liquid/lfm-2.5-1.2b-instruct:free',
+    'tencent/hy3-preview:free',
+  ],
+  provider: { sort: { by: "price", partition: "none" } },
+  temperature: 0.2,
+  maxTokens: 100,
+  systemPrompt: "You are a helpful assistant.",
+  port: 3000
+};
+```
+
+---
+
+---
+
+
+## Exemplo de Serviço
+
+```typescript
+// src/openrouterService.ts
+import { OpenRouter } from "@openrouter/sdk";
+export class OpenRouterService {
+    constructor(config) {
+        this.client = new OpenRouter({ apiKey: config.apiKey });
+        this.config = config;
+    }
+    async generate(prompt) {
+        const response = await this.client.chat.send({
+            models: this.config.models,
+            messages: [
+                { role: 'system', content: this.config.systemPrompt },
+                { role: "user", content: prompt }
+            ],
+            temperature: this.config.temperature,
+            maxTokens: this.config.maxTokens,
+            provider: this.config.provider
+        });
+        return { model: response.model, content: String(response.choices.at(0)?.message.content) };
+    }
+}
+```
+
+---
+
+---
+
+
+## Exemplo de Servidor
 
 ```typescript
 // src/server.ts
 import Fastify from "fastify";
-
-export const createServer = () => {
-    const app = Fastify({ logger: false });
-
+export const createServer = (routerService) => {
+    const app = Fastify();
     app.post('/chat', {
         schema: {
-            body: {
-                type: "object",
-                required: ["question"],
-                properties: {
-                    question: { type: "string", minLength: 5 },
-                }
-            }
+            body: { type: "object", required: ["question"], properties: { question: { type: "string", minLength: 5 } } }
         }
     }, async (request, reply) => {
         try {
-            const { question } = request.body as { question: string };
-            return reply.send({ answer: `The question was: ${question}` });
+            const { question } = request.body;
+            const response = await routerService.generate(question);
+            return reply.send({ answer: response });
         } catch (error) {
-            console.error("Error handling /chat request:", error);
             return reply.code(500).send({ error: "Internal Server Error" });
         }
     });
-
     return app;
 };
 ```
 
-```typescript
-// src/index.ts
-import { createServer } from "./server.ts";
+---
 
-const app = createServer();
-await app.listen({ port: 3000, host: '0.0.0.0' });
-console.log("Server is running on http://localhost:3000");
-```
+---
 
-### Validação com `app.inject()`
 
-O Fastify fornece `app.inject()` para testar rotas **sem abrir uma conexão HTTP real**. Útil para smoke tests no próprio `index.ts` durante o desenvolvimento:
+## Exemplo de Teste
 
 ```typescript
-app.inject({
-    method: 'POST',
-    url: '/chat',
-    body: { question: "What is the capital of France?" }
-}).then(response => {
-    console.log("Status:", response.statusCode);
-    console.log("Body:", response.body);
+// tests/router.e2e.test.ts
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createServer } from '../src/server.ts';
+import { config } from '../src/config.ts';
+import { OpenRouterService } from '../src/openrouterService.ts';
+
+test('routes to cheapest model', async () => {
+  const routerService = new OpenRouterService({ ...config, provider: { sort: { by: "price" } } });
+  const app = createServer(routerService);
+  const response = await app.inject({ method: 'POST', url: '/chat', body: { question: "Pergunta exemplo" } });
+  assert.equal(response.statusCode, 200);
 });
 ```
 
+---
+
 ### Pontos importantes para revisão
 
-- **Factory function** (`createServer`) isola a criação e configuração do servidor da sua inicialização. Facilita testes unitários (instanciar sem chamar `listen`) e reuso em múltiplos contextos.
-- **Separação `server.ts` / `index.ts`**: `server.ts` é responsável pela configuração (rotas, plugins, schemas). `index.ts` é responsável pelo boot (listen, env vars, graceful shutdown). Esse padrão é amplamente usado em projetos Fastify.
-- **JSON Schema no Fastify**: o campo `schema.body` valida e serializa o corpo da requisição automaticamente. Se a validação falhar, o Fastify retorna `400 Bad Request` antes mesmo de chegar no handler — sem código extra.
-- **`minLength: 5`** na propriedade `question` garante que perguntas muito curtas sejam rejeitadas na borda do sistema.
-- **`host: '0.0.0.0'`** faz o servidor escutar em todas as interfaces de rede, necessário quando o serviço roda em container ou VM (não apenas `localhost`).
+- **`node:test` e `node:assert/strict`** são módulos nativos do Node.js 18+. Não há dependência de teste para instalar — o runner já está no runtime.
+- **`app.inject()` nos testes**: os testes reutilizam a mesma factory `createServer()` e simulam requisições HTTP sem abrir porta. Isso torna os testes rápidos, sem conflito de porta e sem depender de rede.
+- **Injeção de `customConfig`**: cada teste cria um `OpenRouterService` com a estratégia de roteamento que quer validar (`price` ou `throughput`). O `configOverride` do construtor de `OpenRouterService` é a chave que torna isso possível sem alterar variáveis globais.
+- **Fragilidade intencional do `assert.equal(body.answer.model, ...)`**: fixar o nome do modelo esperado é uma decisão consciente. O teste valida o comportamento do roteamento sob o estado atual do mercado. Se um modelo mudar de preço ou sair do ar, o teste quebra e sinaliza que a expectativa precisa ser reavaliada — o que é o comportamento correto.
+- **`--trace-warnings`**: flag que imprime stack trace completo para todos os `DeprecationWarning` e avisos do Node. Ajuda a identificar APIs obsoletas cedo.
+- **`test:dev` com `--inspect --watch`**: o modo de desenvolvimento reinicia os testes a cada mudança de arquivo e permite anexar o VS Code para inspecionar execução com breakpoints.
 
 ---
 
-## Stack
 
-| Tecnologia | Versão | Papel |
-|---|---|---|
-| Node.js | 24.x | Runtime com TypeScript nativo |
-| Fastify | 5.7.4 | Framework HTTP de alta performance |
-| `@types/node` | ^24 | Tipos TypeScript para Node.js |
+## Fluxo de Requisição
+
+```
+Cliente HTTP
+    │ POST /chat { question }
+    ▼
+server.ts (valida schema)
+    │ chama routerService.generate()
+    ▼
+openrouterService.ts (monta chamada, aplica critério)
+    │ envia para OpenRouter SDK
+    ▼
+OpenRouter (cloud)
+    │ roteia e responde
+    ▼
+server.ts → Cliente HTTP (model, content)
+```
+
+## Fluxo de Teste
+
+```
+router.e2e.test.ts
+    │ instancia serviço/config customizada
+    │ app.inject(POST /chat)
+    ▼
+assert.equal(statusCode, 200)
+```
 
 ---
 
-## Próximos passos
-
-- [ ] Integrar o primeiro provider de LLM (ex: OpenAI, Ollama, OpenRouter)
-- [ ] Implementar a lógica de roteamento inteligente entre modelos
-- [ ] Adicionar variáveis de ambiente (API keys) via `.env`
-- [ ] Criar testes automatizados usando `app.inject()`
-
-
-## Criar a conexão com o https://openrouter.ai/
-
-### Vistia ao modelos em https://openrouter.ai/models,
-Filtre pelo preço do prompt. A página lista diversos modelos de IA oferecidos pelo OpenRouter, organizados por categorias como: Texto, Imagem, Áudio, Vídeo, Embeddings, Rerank, Speech, Transcrição. Cada modelo inclui informações como contexto máximo, preço por milhão de tokens, data de lançamento e capacidades multimodais.
-  
-### visita as atividades em https://openrouter.ai/activity, 
-A página permite a visualizar o uso dos modelos utilizados através do OpenRouter.
-
-### Visita ao chat em https://openrouter.ai/chat, 
-A página funciona como um playground de modelos de IA, permitindo comparar diferentes modelos lado a lado e testar suas capacidades em vários desafios. 
-
-### visita ao ranking em https://openrouter.ai/rankings, com as seguintes informações:
-
-1. Ranking de Modelos (Trending). A página mostra os modelos de IA mais usados recentemente na plataforma OpenRouter, com base em volume de tokens consumidos.
-2. Market Share por Autor, mostra a participação de mercado (em tokens) dos principais desenvolvedores
-3. Categorias de Comparação, apágina permite comparar modelos por: Uso geral, Linguagens naturais, Linguagens de  programação, Comprimento de contexto, Uso de ferramentas, Processamento de imagens.
-4. Apps & Agents mais populares, Ranking dos aplicativos/agentes que mais consomem tokens.
-5. Estrutura geral da plataforma, a página também destaca: Diretório de apps e agentes, Estatísticas de uso, Links para documentação, API, SDK e suporte.
+---
