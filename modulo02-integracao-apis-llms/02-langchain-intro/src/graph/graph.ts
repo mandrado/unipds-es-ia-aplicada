@@ -2,6 +2,8 @@ import { END, MessagesZodMeta, START, StateGraph } from "@langchain/langgraph";
 import { withLangGraph } from "@langchain/langgraph/zod";
 import { BaseMessage } from "langchain";
 import { z } from "zod/v3";
+import { chatResponseNode } from "./nodes/chatResponseNode.ts";
+import { identifyIntentNode } from "./nodes/identifyIntentNode.ts";
 
 // Define the schema for the graph state using Zod
 const GraphState = z.object({
@@ -25,14 +27,17 @@ export function buildGraph() {
 
   // Define the nodes and edges of the graph
   workflow
-    .addNode("identifyIntent", (state: GraphState) => {
-      return{
-        ...state,
-        output: "test"
-      }
-    })
+    // .addNode("identifyIntent", (state: GraphState) => {
+    //   return{
+    //     ...state,
+    //     output: "test"
+    //   }
+    // })
+  .addNode("identifyIntent", identifyIntentNode)
+  .addNode("chatResponse", chatResponseNode)
   .addEdge(START, "identifyIntent")
-  .addEdge("identifyIntent", END)
+  .addEdge("identifyIntent", "chatResponse")
+  .addEdge("chatResponse", END)
 
   return workflow.compile()
 }
