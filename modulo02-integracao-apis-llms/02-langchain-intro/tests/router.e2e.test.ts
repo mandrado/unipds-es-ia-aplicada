@@ -8,15 +8,13 @@ if (!process.env.LANGSMITH_API_KEY) {
     console.warn("\x1b[31mA variável de ambiente LANGSMITH_API_KEY não está definida.\x1b[0m");
 }
 
-// test.todo("Testar endpoint /chat");
-
-
+// Teste para verificar se o endpoint /chat está funcionando corretamente
 test('command upper transform message into UPPERCASE', async () => {
     const app = createServer();
 
     const msg = "make this message UPPERCASE please!";
     const expected = msg.toUpperCase();
-    
+
     const response = await app.inject({
         method: 'POST',
         url: '/chat',
@@ -25,5 +23,5 @@ test('command upper transform message into UPPERCASE', async () => {
         }
     })
     assert.equal(response.statusCode, 200);
-    assert.equal(response.body, JSON.stringify({ answer: expected }));
+    assert.equal(response.body, expected);
 });

@@ -12,7 +12,7 @@ Comandos:
 cd .\modulo02-integracao-apis-llms\02-langchain-intro\
 npm init -y
 npm install fastify@5.7.4 @types/node@24
-npm install @langchain/core@1.1.19 langchain@1.2.17
+npm install @langchain/core@1.1.44 langchain@1.2.17
 ```
 
 Criar uma aplicação de exemplo
