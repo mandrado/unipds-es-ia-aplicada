@@ -11,18 +11,19 @@ if (!process.env.LANGSMITH_API_KEY) {
 // test.todo("Testar endpoint /chat");
 
 
-test('routes to cheapes model by default', async () => {
+test('command upper transform message into UPPERCASE', async () => {
     const app = createServer();
 
-    // copiado do index.ts pois aqui é o local onde o servidor é criado e onde podemos usar 
-    // o app.inject para testar os endpoints
+    const msg = "make this message UPPERCASE please!";
+    const expected = msg.toUpperCase();
+    
     const response = await app.inject({
         method: 'POST',
         url: '/chat',
         body: {
-            question: "What is rate limiting for LLMs? answer in one phrase"
+            question: msg
         }
     })
     assert.equal(response.statusCode, 200);
-    const responseBody = JSON.parse(response.body);
+    assert.equal(response.body, JSON.stringify({ answer: expected }));
 });

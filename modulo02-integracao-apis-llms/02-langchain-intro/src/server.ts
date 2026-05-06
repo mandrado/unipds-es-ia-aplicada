@@ -20,7 +20,7 @@ export const createServer = () => {
     }, async (request, reply) => {
         try {
             const { question } = request.body as { question: string };
-            return reply.send({ answer: `You asked: ${question}` });
+            return reply.send({ answer: question.toUpperCase() });
         } catch (error) {
             console.error("Error handling /chat request:", error);
             return reply.code(500).send({ error: "Internal Server Error" });
