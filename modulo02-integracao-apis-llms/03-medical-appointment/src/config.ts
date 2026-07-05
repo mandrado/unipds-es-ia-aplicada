@@ -24,9 +24,8 @@ export const config: ModelConfig = {
   httpReferer: "",
   xTitle: "IA Devs - Prompt Chaining Article Generator",
   models: [
-    // upstage/solar-pro-3:free',
-    //'google/gemma-4-26b-a4b-it:free',
-    "nvidia/nemotron-3-super-120b-a12b:free",
+    // https://openrouter.ai/models?fmt=cards&max_price=0&supported_parameters=response_format
+    "nvidia/nemotron-nano-9b-v2:free",
   ],
   provider: {
     sort: {
