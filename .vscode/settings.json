@@ -18,5 +18,8 @@
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"
   },
-  "eslint.enable": true
+  "eslint.enable": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

@@ -6,7 +6,7 @@ export const MessageSchema = z.object({
 
 export type MessageResponse = z.infer<typeof MessageSchema>;
 
-export const getSystemPrompt = () => {
+export const getSystemPrompt = (professionals: any[]) => {
   return JSON.stringify({
     role: 'Friendly Medical Receptionist',
     task: 'Generate clear, professional, and empathetic messages for patients',
