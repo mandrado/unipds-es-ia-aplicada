@@ -16,6 +16,8 @@ export type ModelConfig = {
   memory: {
     dbUri: string;
   };
+
+  maxMessagesToSummary: number;
 };
 
 console.assert(
@@ -39,7 +41,7 @@ export const config: ModelConfig = {
   },
   temperature: 0.7,
   memory: {
-    dbUri:
-      'postgresql://postgres:mysecretpassword@localhost:5432/song_recommender',
+    dbUri: 'postgresql://postgres:mysecretpassword@localhost:5432/song_recommender',
   },
+  maxMessagesToSummary: 2,
 };

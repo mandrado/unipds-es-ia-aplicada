@@ -26,6 +26,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "prettier.singleQuote": true,
+  "prettier.printWidth": 100,
   "javascript.preferences.quoteStyle": "single",
   "typescript.preferences.quoteStyle": "single"
 }
