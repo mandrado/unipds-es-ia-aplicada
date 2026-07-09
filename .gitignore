@@ -147,3 +147,4 @@ metrics/
 plugins/
 import/*.csv
 *.lock
+modulo02-integracao-apis-llms/04-song-highlights/preferences.db

@@ -17,6 +17,7 @@ export async function buildGraph(dbPath: string = './preferences.db') {
   return {
     graph,
     preferencesService,
+    memoryService,
   };
 }
 
