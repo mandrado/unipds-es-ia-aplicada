@@ -7,11 +7,16 @@ import {
   getUserPromptTemplate,
 } from '../../prompts/v1/chatResponse.ts';
 import { OpenRouterService } from '../../services/openrouterService.ts';
+import { PreferencesService } from '../../services/preferencesService.ts';
 import type { GraphState } from '../graph.ts';
 
-export function createChatNode(llmClient: OpenRouterService) {
+export function createChatNode(
+  llmClient: OpenRouterService,
+  preferencesService: PreferencesService,
+) {
   return async (state: GraphState, runtime?: Runtime): Promise<Partial<GraphState>> => {
-    const userContext = '';
+    const userId = String(runtime?.context?.userId || state.userId || 'unknown');
+    const userContext = state.userContext ?? (await preferencesService.getBasicInfo(userId));
     const systemPrompt = getSystemPrompt(userContext);
 
     const conversationHitory = state.messages
@@ -47,7 +52,7 @@ export function createChatNode(llmClient: OpenRouterService) {
     return {
       messages: [new AIMessage(response.message)],
       extractedPreferences: response.shouldSavePreferences ? response.preferences : undefined,
-      needsSummarization: false, // Inicialmente, não precisamos de sumarização após a resposta do LLM
+      needsSummarization, // Inicialmente, não precisamos de sumarização após a resposta do LLM
     };
   };
 }
