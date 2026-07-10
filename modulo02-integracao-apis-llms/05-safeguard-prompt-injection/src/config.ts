@@ -16,7 +16,7 @@ export const prompts = {
   blocked: readFileSync('./prompts/blocked.txt', 'utf-8'),
   system: readFileSync('./prompts/system.txt', 'utf-8'),
   guardrails: readFileSync('./prompts/guardrails.txt', 'utf-8'),
-}
+};
 
 // Model configuration type
 export type ModelConfig = {
@@ -35,7 +35,6 @@ export type ModelConfig = {
   temperature: number;
   maxTokens: number;
   guardrailsModel: string;
-
 };
 
 export const config: ModelConfig = {
@@ -45,8 +44,9 @@ export const config: ModelConfig = {
   models: [
     // 'qwen/qwen-2.5-7b-instruct',
     // 'qwen/qwen3-coder-next',
-    // 'upstage/solar-pro-3:free',
-    'qwen/qwen-2.5-7b-instruct',// unsafe!
+    // 'upstage/solar-pro-3:free', // usar esse modelo para teste, pois é gratuito e não requer chave de API
+    // 'upstage/solar-pro-3', // modelo pago, já que o gratuito não está mais disponível, mas é o mesmo modelo do gratuito, apenas com limite de uso
+    'qwen/qwen-2.5-7b-instruct', // unsafe!
   ],
 
   guardrailsModel: 'openai/gpt-oss-safeguard-20b',
