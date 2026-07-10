@@ -5,6 +5,7 @@ Demonstration of **LangGraph memory persistence** using conversational AI to rec
 ## 🎯 Goals
 
 This project exemplifies:
+
 - **Memory Persistence**: Using LangGraph's `MemorySaver` for conversation history
 - **Thread-based Sessions**: Separate conversation contexts per user/session
 - **Conversational AI**: Natural dialogue that asks questions and builds context
@@ -58,23 +59,27 @@ tests/
 This project demonstrates **two types of memory**:
 
 ### 1. Conversation Memory (MemorySaver)
+
 - **Thread ID**: Each conversation has a unique `thread_id` for isolation
 - **In-Memory Storage**: Conversation history stored in memory during the session
 - **Automatic Replay**: Previous messages included when invoking with same `thread_id`
 
 ### 2. User Preferences (LibSQL Vector Store)
+
 - **Vector Embeddings**: User preferences stored as embedded documents using OpenAI embeddings
 - **Semantic Search**: Uses `@libsql/client` with vector similarity for intelligent matching
 - **Persistent Storage**: Preferences persisted to SQLite database across restarts
 - **Document Structure**: Each preference stored with rich metadata (name, bands, genres, age, mood)
 
 **Why Vector Store for Preferences?**
+
 - Better semantic understanding of user taste
 - Can find similar music preferences across users
 - Enables more intelligent recommendations based on embedded meaning
 - Scalable approach for large user bases
 
 This demonstrates production-ready patterns:
+
 - Conversation state for short-term context
 - Vector store for long-term, searchable user data
 - Hybrid memory approach for AI applications
@@ -83,24 +88,28 @@ This demonstrates production-ready patterns:
 // First message
 await graph.invoke(
   { messages: [new HumanMessage("Hi! I'm Alex")] },
-  { configurable: { thread_id: "user-123" } }
+  { configurable: { thread_id: 'user-123' } },
 );
 
 // Second message - AI remembers "Alex" from previous message
 await graph.invoke(
-  { messages: [new HumanMessage("Recommend some songs")] },
-  { configurable: { thread_id: "user-123" } }
+  { messages: [new HumanMessage('Recommend some songs')] },
+  { configurable: { thread_id: 'user-123' } },
 );
 ```
 
 ## Setup
 
 1. **Install dependencies**:
+
    ```bash
    npm install
+   npm install @langchain/langgraph@latest @langchain/core@latest
+   ## Installation
    ```
 
 2. **Configure environment** (`.env`):
+
    ```bash
    OPENROUTER_API_KEY=your_openrouter_key_here
    OPENROUTER_HTTP_REFERER=http://localhost:3000
@@ -109,6 +118,7 @@ await graph.invoke(
    ```
 
 3. **Run the chat interface**:
+
    ```bash
    npm run chat
    ```
@@ -145,11 +155,12 @@ AI: Absolutely, Alex! Since you love Foo Fighters, you might enjoy "Everlong" fo
 - Add structured data extraction to store preferences explicitly
 - Build web interface with session management
   └── v1/
-      ├── plan.json           # Outline generation prompt
-      ├── draft.json          # Section writing prompt
-      └── review.json         # Quality review prompt
-tests/
-  └── article-generator.test.ts  # Real API integration test
+  ├── plan.json # Outline generation prompt
+  ├── draft.json # Section writing prompt
+  └── review.json # Quality review prompt
+  tests/
+  └── article-generator.test.ts # Real API integration test
+
 ```
   │   ├── graph.ts          # StateGraph definition with co-located types
   │   ├── factory.ts        # Graph creation factory
@@ -226,6 +237,7 @@ npm test
 ### 1. Outline Node
 
 Generates article structure:
+
 - Title
 - Introduction
 - Sections with key points
@@ -236,10 +248,9 @@ Generates article structure:
 ### 2. Research Node
 
 Researches all sections **in parallel**:
+
 ```typescript
-const researchPromises = sections.map(section =>
-  llmClient.generate(researchPrompt)
-);
+const researchPromises = sections.map((section) => llmClient.generate(researchPrompt));
 const results = await Promise.all(researchPromises);
 ```
 
@@ -248,6 +259,7 @@ const results = await Promise.all(researchPromises);
 ### 3. Write Sections Node
 
 Writes each section **sequentially** using research:
+
 - Loops through sections
 - Uses section research + key points
 - Calculates word count
@@ -258,6 +270,7 @@ Writes each section **sequentially** using research:
 ### 4. Review Node
 
 Reviews and improves final article:
+
 - Checks tone and style
 - Improves transitions
 - Ensures consistency
@@ -270,6 +283,7 @@ Reviews and improves final article:
 ### StateGraph
 
 Defines the workflow with typed state:
+
 ```typescript
 const ArticleStateAnnotation = Annotation.Root({
   topic: Annotation<string>,
@@ -286,6 +300,7 @@ const ArticleStateAnnotation = Annotation.Root({
 ### Node Functions
 
 Each node receives state and returns partial state updates:
+
 ```typescript
 export const createOutlineNode = (llmClient: LLMClient) => {
   return async (state: GraphState): Promise<Partial<GraphState>> => {
@@ -333,6 +348,7 @@ class MockLLMClient implements LLMClient {
 ```
 
 Tests verify:
+
 - ✅ Complete article generation through graph
 - ✅ Multiple LLM calls in chain
 - ✅ Correct state flow through all nodes
@@ -350,6 +366,7 @@ Tests verify:
 ### Dependency Injection
 
 Nodes receive dependencies as parameters:
+
 ```typescript
 createOutlineNode(llmClient: LLMClient, config: ArticleConfig)
 ```
@@ -357,6 +374,7 @@ createOutlineNode(llmClient: LLMClient, config: ArticleConfig)
 ### Immutable State
 
 Nodes return new state objects, never mutate:
+
 ```typescript
 return {
   ...state,
@@ -367,6 +385,7 @@ return {
 ### Prompt Templates
 
 Prompts stored in files, not code:
+
 ```typescript
 const prompt = await PromptLoader.load('outline', {
   topic: state.topic,
