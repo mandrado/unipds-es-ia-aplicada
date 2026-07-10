@@ -1,14 +1,12 @@
-import { z } from 'zod/v3';
-import { withLangGraph } from '@langchain/langgraph/zod';
 import type { BaseMessage } from '@langchain/core/messages';
+import { MessagesZodMeta } from '@langchain/langgraph';
+import { withLangGraph } from '@langchain/langgraph/zod';
+import { z } from 'zod/v3';
 import { type User } from '../config.ts';
 import type { GuardrailResult } from '../services/openrouterService.ts';
-import { MessagesZodMeta } from '@langchain/langgraph';
 
 export const SafeguardStateAnnotation = z.object({
-  messages: withLangGraph(
-    z.custom<BaseMessage[]>(),
-    MessagesZodMeta),
+  messages: withLangGraph(z.custom<BaseMessage[]>(), MessagesZodMeta),
 
   user: z.custom<User>(),
 
