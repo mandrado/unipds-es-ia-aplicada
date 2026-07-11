@@ -15,10 +15,12 @@ export const createGuardrailsCheckNode = (openRouterService: OpenRouterService) 
         USER_NAME: state.user.displayName,
       });
 
+      const msg = systemPrompt + ('\n' + userPrompt);
+
+      const result = await openRouterService.checkGuardRails(msg, state.guardrailsEnabled);
+
       return {
-        guardrailCheck: {
-          safe: true,
-        },
+        guardrailCheck: result,
       };
     } catch (error) {
       console.error('Guardrails check failed:', error);

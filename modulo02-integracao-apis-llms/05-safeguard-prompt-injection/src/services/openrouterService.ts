@@ -1,7 +1,8 @@
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { PromptTemplate } from '@langchain/core/prompts';
 import { ChatOpenAI } from '@langchain/openai';
 import { createAgent } from 'langchain';
-import { config, type ModelConfig } from '../config.ts';
+import { config, prompts, type ModelConfig } from '../config.ts';
 import { getMCPTools } from './mcpService.ts';
 
 export type GuardrailResult = {
@@ -14,11 +15,13 @@ export type GuardrailResult = {
 export class OpenRouterService {
   private config: ModelConfig;
   private llmClient: ChatOpenAI;
+  private safeGuardModel: ChatOpenAI;
   private fsAgent: ReturnType<typeof createAgent> | null = null;
 
   constructor(configOverride?: ModelConfig) {
     this.config = configOverride ?? config;
     this.llmClient = this.#createChatModel(this.config.models[0]);
+    this.safeGuardModel = this.#createChatModel(this.config.guardrailsModel);
   }
 
   #createChatModel(modelName: string): ChatOpenAI {
@@ -56,5 +59,39 @@ export class OpenRouterService {
     const content = String(response.messages.at(-1)?.text ?? '');
 
     return content;
+  }
+
+  async checkGuardRails(userInput: string, enabled: boolean = true) {
+    if (!enabled) {
+      return { safe: true, reason: 'Guardrails is disabled.' };
+    }
+
+    const template = PromptTemplate.fromTemplate(prompts.guardrails);
+    const input = await template.format({
+      USER_INPUT: userInput,
+    });
+
+    const response = await this.safeGuardModel.invoke([
+      {
+        role: 'user',
+        content: input,
+      },
+    ]);
+
+    const result = response.text.trim();
+
+    const isUnsafe = result.toLowerCase().includes('unsafe');
+    if (isUnsafe) {
+      return {
+        safe: false,
+        reason: 'Prompt Injection detected by safeguard model - request blocked for safety.',
+        analysis: result,
+      };
+    }
+    return {
+      safe: true,
+      reason: 'No prompt injection detected by safeguard model.',
+      analysis: result,
+    };
   }
 }
