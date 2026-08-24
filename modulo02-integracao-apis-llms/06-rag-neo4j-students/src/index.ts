@@ -11,17 +11,21 @@ console.log(`Server is running on http://0.0.0.0:4000`);
 //  --data '{"question": "upper"}' \
 //  localhost:4000/chat
 
-app.inject({
+app
+  .inject({
     method: 'POST',
     url: '/sales',
     payload: {
-        question: 'Which courses are commonly bought together?', // complex
-        // question: "Find courses that students typically purchase after 'Machine Learning em Navegadores'", // complex
-        // question: 'Show me the revenue distribution across all courses',
-        // question: 'Which users have progressed over 80%?',
+      // question: 'Which courses are commonly bought together?', // complex
+      // question: "Find courses that students typically purchase after 'Machine Learning em Navegadores'", // complex
+      // question: 'Show me the revenue distribution across all courses',
+      // question: 'Which users have progressed over 80%?',
+      question: 'Quantos cursos tem na academia?', // simple
     },
-}).then(response => {
+  })
+  .then((response) => {
     console.log(JSON.parse(response.body)?.answer);
-}).catch(error => {
+  })
+  .catch((error) => {
     console.error('Error making test request:', error);
-})
+  });

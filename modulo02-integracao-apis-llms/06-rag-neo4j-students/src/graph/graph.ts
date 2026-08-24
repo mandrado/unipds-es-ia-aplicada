@@ -1,29 +1,22 @@
-import {
-  StateGraph,
-  START,
-  END,
-  MessagesZodMeta,
-} from '@langchain/langgraph';
-import { withLangGraph } from "@langchain/langgraph/zod";
+import { END, MessagesZodMeta, START, StateGraph } from '@langchain/langgraph';
+import { withLangGraph } from '@langchain/langgraph/zod';
 
-import { z } from 'zod/v3';
 import type { BaseMessage } from '@langchain/core/messages';
+import { z } from 'zod/v3';
 
 import { Neo4jService } from '../services/neo4jService.ts';
 import { OpenRouterService } from '../services/openrouterService.ts';
 
-import { createCypherGeneratorNode } from './nodes/cypherGeneratorNode.ts';
-import { createCypherExecutorNode } from './nodes/cypherExecutorNode.ts';
-import { createCypherCorrectionNode } from './nodes/cypherCorrectionNode.ts';
-import { createQueryPlannerNode } from './nodes/queryPlannerNode.ts';
 import { createAnalyticalResponseNode } from './nodes/analyticalResponseNode.ts';
+import { createCypherCorrectionNode } from './nodes/cypherCorrectionNode.ts';
+import { createCypherExecutorNode } from './nodes/cypherExecutorNode.ts';
+import { createCypherGeneratorNode } from './nodes/cypherGeneratorNode.ts';
 import { createExtractQuestionNode } from './nodes/extractQuestionNode.ts';
+import { createQueryPlannerNode } from './nodes/queryPlannerNode.ts';
 
 const SalesStateAnnotation = z.object({
   // Input
-    messages: withLangGraph(
-      z.custom<BaseMessage[]>(),
-      MessagesZodMeta),
+  messages: withLangGraph(z.custom<BaseMessage[]>(), MessagesZodMeta),
   question: z.string().optional(),
 
   // Cypher generation
@@ -55,10 +48,7 @@ const SalesStateAnnotation = z.object({
 
 export type GraphState = z.infer<typeof SalesStateAnnotation>;
 
-export function buildSalesGraph(
-  llmClient: OpenRouterService,
-  neo4jService: Neo4jService
-) {
+export function buildSalesGraph(llmClient: OpenRouterService, neo4jService: Neo4jService) {
   const workflow = new StateGraph({
     stateSchema: SalesStateAnnotation,
   })
