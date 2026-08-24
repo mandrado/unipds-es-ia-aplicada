@@ -1,8 +1,8 @@
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { ChatOpenAI } from '@langchain/openai';
-import { config } from '../config.ts';
-import { SystemMessage, HumanMessage } from '@langchain/core/messages';
-import type { z } from 'zod/v3';
 import { createAgent, providerStrategy } from 'langchain';
+import type { z } from 'zod/v3';
+import { config } from '../config.ts';
 
 export type LLMResponse = {
   model: string;
@@ -33,33 +33,25 @@ export class OpenRouterService {
     });
   }
 
-  async generateStructured<T>(
-    userPrompt: string,
-    systemPrompt: string,
-    schema: z.ZodSchema<T>,
-  ) {
+  async generateStructured<T>(systemPrompt: string, userPrompt: string, schema: z.ZodSchema<T>) {
     try {
-
       const agent = createAgent({
         model: this.llmClient,
         tools: [],
         responseFormat: providerStrategy(schema),
-      })
+      });
 
-      const messages = [
-        new SystemMessage(systemPrompt),
-        new HumanMessage(userPrompt),
-      ];
+      const messages = [new SystemMessage(systemPrompt), new HumanMessage(userPrompt)];
 
       const data = await agent.invoke({ messages });
       return {
         success: true,
-        data: data.structuredResponse,
-      }
+        data: data.structuredResponse as T,
+      };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }

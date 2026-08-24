@@ -22,7 +22,7 @@ export function createQueryPlannerNode(llmClient: OpenRouterService) {
         return {
           ...state,
           error,
-          isMultiStep: true,
+          isMultiStep: false,
         };
       }
 
@@ -36,7 +36,7 @@ export function createQueryPlannerNode(llmClient: OpenRouterService) {
         );
 
         return {
-          isMultiStep: false,
+          isMultiStep: true,
           subQuestions: data.subQuestions,
           currentStep: 0,
           subQueries: [],
