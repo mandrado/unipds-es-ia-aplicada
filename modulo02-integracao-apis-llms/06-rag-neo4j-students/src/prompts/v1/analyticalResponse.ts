@@ -20,9 +20,17 @@ export const getSystemPrompt = (): string => {
     ],
     example: {
       question: 'What is the revenue distribution across courses?',
-      dbResults: [{ courseName: 'JS Expert', totalRevenue: 25000 }, { courseName: 'Node Streams', totalRevenue: 15000 }],
-      answer: 'Strong revenue concentration: **JS Expert** leads with $25,000 (62.5%), **Node Streams** $15,000 (37.5%). Top course generates 67% more than second place, indicating strong market demand.',
-      followUpQuestions: ['Which course has highest completion rate?', 'How many students purchased JS Expert?', 'What payment methods are most popular?'],
+      dbResults: [
+        { courseName: 'JS Expert', totalRevenue: 25000 },
+        { courseName: 'Node Streams', totalRevenue: 15000 },
+      ],
+      answer:
+        'Strong revenue concentration: **JS Expert** leads with $25,000 (62.5%), **Node Streams** $15,000 (37.5%). Top course generates 67% more than second place, indicating strong market demand.',
+      followUpQuestions: [
+        'Which course has highest completion rate?',
+        'How many students purchased JS Expert?',
+        'What payment methods are most popular?',
+      ],
     },
   });
 };
@@ -30,15 +38,12 @@ export const getSystemPrompt = (): string => {
 export const getUserPromptTemplate = (
   question: string,
   query: string,
-  dbResults: string
+  dbResults: string,
 ): string => {
   return JSON.stringify({ question, query, dbResults });
 };
 
-export const getErrorResponsePrompt = (
-  error: string,
-  question?: string
-): string => {
+export const getErrorResponsePrompt = (error: string, question?: string): string => {
   return JSON.stringify({
     error,
     question,
@@ -46,10 +51,7 @@ export const getErrorResponsePrompt = (
   });
 };
 
-export const getNoResultsPrompt = (
-  question: string,
-  query: string
-): string => {
+export const getNoResultsPrompt = (question: string, query: string): string => {
   return JSON.stringify({
     question,
     query,
@@ -64,7 +66,7 @@ export const getMultiStepSynthesisPrompt = (
     question: string;
     query: string;
     results: string;
-  }>
+  }>,
 ): string => {
   return JSON.stringify({
     original_question: originalQuestion,

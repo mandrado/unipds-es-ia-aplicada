@@ -52,20 +52,29 @@ export function createCypherGeneratorNode(
 
       if (error) {
         return {
+          ...state,
           error: `Failed to generate query: ${error ?? 'Unknown error'}`,
         };
       }
 
-      console.log(`✅ Generated Cypher query: ${data?.query}`);
+      const generatedQuery = typeof data?.query === 'string' ? data.query.trim() : '';
+      if (!generatedQuery) {
+        return {
+          ...state,
+          error: 'LLM returned an invalid Cypher query format. Expected { "query": "..." }',
+        };
+      }
+
+      console.log(`✅ Generated Cypher query: ${generatedQuery}`);
       if (state.isMultiStep && state.subQueries?.length) {
         return {
-          query: data?.query,
-          subQueries: [...state.subQueries, data?.query ?? ''],
+          query: generatedQuery,
+          subQueries: [...state.subQueries, generatedQuery],
         };
       }
 
       return {
-        query: data?.query,
+        query: generatedQuery,
       };
     } catch (error: any) {
       console.error('Error generating Cypher query:', error.message);

@@ -1,7 +1,6 @@
 import type { GraphState } from '../graph.ts';
 
 export function createExtractQuestionNode() {
-
   return async (state: GraphState): Promise<Partial<GraphState>> => {
     try {
       if (!state.messages?.length) {

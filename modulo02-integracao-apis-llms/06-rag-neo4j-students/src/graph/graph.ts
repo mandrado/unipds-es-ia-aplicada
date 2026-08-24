@@ -4,6 +4,7 @@ import { withLangGraph } from '@langchain/langgraph/zod';
 import type { BaseMessage } from '@langchain/core/messages';
 import { z } from 'zod/v3';
 
+import config from '../config.ts';
 import { Neo4jService } from '../services/neo4jService.ts';
 import { OpenRouterService } from '../services/openrouterService.ts';
 
@@ -66,11 +67,20 @@ export function buildSalesGraph(llmClient: OpenRouterService, neo4jService: Neo4
       return 'queryPlanner';
     })
 
-    .addEdge('queryPlanner', 'cypherGenerator')
-    .addEdge('cypherGenerator', 'cypherExecutor')
+    .addConditionalEdges('queryPlanner', (state: GraphState) => {
+      if (state.error || !state.question) return END;
+      return 'cypherGenerator';
+    })
+
+    .addConditionalEdges('cypherGenerator', (state: GraphState) => {
+      if (state.error || !state.query || !state.query.trim()) return END;
+      return 'cypherExecutor';
+    })
 
     .addConditionalEdges('cypherExecutor', (state: GraphState) => {
-      if (state.needsCorrection && (!state.correctionAttempts || state.correctionAttempts < 1)) {
+      if (state.error) return END;
+
+      if (state.needsCorrection && (state.correctionAttempts ?? 0) < config.maxCorrectionAttempts) {
         return 'cypherCorrection';
       }
 
@@ -83,7 +93,11 @@ export function buildSalesGraph(llmClient: OpenRouterService, neo4jService: Neo4
       return 'analyticalResponse';
     })
 
-    .addEdge('cypherCorrection', 'cypherExecutor')
+    .addConditionalEdges('cypherCorrection', (state: GraphState) => {
+      if (state.error || !state.query || !state.query.trim()) return END;
+      return 'cypherExecutor';
+    })
+
     .addEdge('analyticalResponse', END);
 
   return workflow.compile();

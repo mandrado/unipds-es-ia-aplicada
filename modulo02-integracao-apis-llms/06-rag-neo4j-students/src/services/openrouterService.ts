@@ -1,6 +1,5 @@
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { ChatOpenAI } from '@langchain/openai';
-import { createAgent, providerStrategy } from 'langchain';
 import type { z } from 'zod/v3';
 import { config } from '../config.ts';
 
@@ -24,8 +23,6 @@ export class OpenRouterService {
           'X-Title': config.xTitle,
         },
       },
-
-      // Pass provider routing and models array to OpenRouter
       modelKwargs: {
         models: config.models,
         provider: config.provider,
@@ -35,18 +32,26 @@ export class OpenRouterService {
 
   async generateStructured<T>(systemPrompt: string, userPrompt: string, schema: z.ZodSchema<T>) {
     try {
-      const agent = createAgent({
-        model: this.llmClient,
-        tools: [],
-        responseFormat: providerStrategy(schema),
+      const structuredModel = this.llmClient.withStructuredOutput(schema, {
+        name: 'structured_response',
       });
 
       const messages = [new SystemMessage(systemPrompt), new HumanMessage(userPrompt)];
 
-      const data = await agent.invoke({ messages });
+      const response = await structuredModel.invoke(messages);
+      const directPayload = (response as any)?.parsed ?? (response as any)?.structured ?? response;
+      const payload = typeof directPayload === 'string' ? JSON.parse(directPayload) : directPayload;
+
+      if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        return {
+          success: true,
+          data: payload as T,
+        };
+      }
+
       return {
-        success: true,
-        data: data.structuredResponse as T,
+        success: false,
+        error: 'LLM structured output was empty or malformed',
       };
     } catch (error) {
       return {
