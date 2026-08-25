@@ -105,8 +105,9 @@ await graph.invoke(
    ```bash
    npm install
    npm install @langchain/langgraph@latest @langchain/core@latest
-   ## Installation
    ```
+
+## Installation
 
 2. **Configure environment** (`.env`):
 
