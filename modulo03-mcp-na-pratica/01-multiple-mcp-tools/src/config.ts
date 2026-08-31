@@ -15,15 +15,16 @@ export type ModelConfig = {
   maxTokens: number;
 };
 
-console.assert(process.env.OPENROUTER_API_KEY, 'OPENROUTER_API_KEY is not set in environment variables');
+console.assert(
+  process.env.OPENROUTER_API_KEY,
+  'OPENROUTER_API_KEY is not set in environment variables',
+);
 
 export const config: ModelConfig = {
   apiKey: process.env.OPENROUTER_API_KEY!,
   httpReferer: '',
   xTitle: 'IA Devs - Transforming Services into Tools',
-  models: [
-    'arcee-ai/trinity-large-preview:free',
-  ],
+  models: ['arcee-ai/trinity-large-thinking'],
   provider: {
     sort: {
       by: 'throughput', // Route to model with highest throughput (fastest response)
