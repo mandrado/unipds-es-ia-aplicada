@@ -13,25 +13,30 @@ const question = `
 Rank the top 5 most sold products:
 
 ${salesData}
-`
-// const question =`
+`;
+// const question = `
 // Here is a CSV file called sales.csv.
 // What's the total revenue from this sales data?.
 
 // ${salesData}
-// `
+// `;
 
-app.inject({
-  method: 'POST',
-  url: '/chat',
-  payload: {
-    question,
-  },
-}).then(response => {
-  console.log('Response from /chat:', response.statusCode)
-  console.log(response.body);
-  process.exit(0);
-}).catch(error => {
-  console.error('Error testing /chat endpoint:', error);
-  process.exit(1);
-});
+app
+  .inject({
+    method: 'POST',
+    url: '/chat',
+    payload: {
+      question,
+    },
+  })
+  .then((response) => {
+    console.log('Response from /chat:', response.statusCode);
+    console.log(response.body);
+    process.exitCode = 0;
+    return app.close();
+  })
+  .catch((error) => {
+    console.error('Error testing /chat endpoint:', error);
+    process.exitCode = 1;
+    return app.close();
+  });
